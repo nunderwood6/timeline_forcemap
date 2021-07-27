@@ -79,20 +79,20 @@ function positionMap(municipios,focusBox,rasterBox,countries){
 
     //append raster background
     svg.append("image")
-            .attr("href", "img/hs_light.jpg")
+            .attr("href", "img/dot_test_hs_background.jpg")
             .attr("x", rasterOrigin[0]+"%")
             .attr("y", rasterOrigin[1]+"%")
             .attr("width", rasterWidth + "%")
             .attr("transform", "translate(0,5)");
 
-    //draw countries
-    var countryBorders = svg.append("g")
-                            .selectAll(".country")
-                            .data(countries)
-                            .enter()
-                            .append("path")
-                                .attr("d", pathGuate)
-                                .attr("class", "country");
+    // //draw countries
+    // var countryBorders = svg.append("g")
+    //                         .selectAll(".country")
+    //                         .data(countries)
+    //                         .enter()
+    //                         .append("path")
+    //                             .attr("d", pathGuate)
+    //                             .attr("class", "country");
 
 
     // //draw labels as HTML so it doesn't scale with viewbox
@@ -129,7 +129,7 @@ function drawDotDensity(groupsData){
                             .append("path")
                                 .attr("d", pathGuate)
                                 .attr("class", "municipio")
-                                .attr("fill", d => colorScale(d.properties["percent_indgenous"]));
+                                .attr("fill", "none");
 
 }
 
@@ -313,8 +313,8 @@ function drawMassacres(massacres){
                        .attr("cy", d=>d.y)
                        .attr("r", 0)
                        .attr("r", d=>d.r-0.1)
-                       .attr("opacity", 0.8)
-                       .attr("fill", "#000")
+                       .attr("opacity", 0.9)
+                       .attr("fill", "#fff")
                        .attr("stroke", "#555")
                        .attr("stroke-width", 0.1);
 
@@ -368,8 +368,8 @@ function updateMassacres(currentData,timePeriod){
                      .attr("cy", d=>d.y)
                      .attr("r", 0)
                      .attr("r", d=>d.r-0.1)
-                     .attr("opacity", 0.8)
-                     .attr("fill", "#000")
+                     .attr("opacity", 0.9)
+                     .attr("fill", "#fff")
                      .attr("stroke", "#555")
                      .attr("stroke-width", 0.1);
 
