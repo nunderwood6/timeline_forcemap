@@ -24,7 +24,6 @@ div.opener {
 
 }
 
-
 div.opener h1 {
 	padding-top: 10px;
 	font-size: 4em;
@@ -102,7 +101,7 @@ div.spacer {
 	border-radius: 5px;
 	max-width: 650px;
 	padding: 5px;
-	opacity: 0;
+	opacity: 1;
 }
 
 article {
@@ -111,6 +110,7 @@ article {
 	margin-top: -10%;
 	position: relative;
 	z-index: 4;
+
 }
 
 div.outer{

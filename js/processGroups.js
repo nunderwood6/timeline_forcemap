@@ -5,7 +5,6 @@ var rasterBounds;
 var focusWidth;
 var circleGroups;
 var outerCircles;
-var massacreCircles;
 var massacresSpread;
 var massacreSvg;
 
@@ -68,8 +67,7 @@ function positionMap(municipios,focusBox,rasterBox,countries){
               .attr("class", "magic")
               .attr("viewBox", `0 0 ${w} ${h}`)
               .attr("overflow", "visible")
-              .style("position","relative")
-              .style("z-index", 1)
+              .style("position","relative");
 
 
     //calculate raster extent percentages
@@ -79,37 +77,11 @@ function positionMap(municipios,focusBox,rasterBox,countries){
 
     //append raster background
     svg.append("image")
-            .attr("href", "img/dot_test_hs_background.jpg")
+            .attr("href", "img/dot_test_hs_background_brighter.jpg")
             .attr("x", rasterOrigin[0]+"%")
             .attr("y", rasterOrigin[1]+"%")
             .attr("width", rasterWidth + "%")
             .attr("transform", "translate(0,5)");
-
-    // //draw countries
-    // var countryBorders = svg.append("g")
-    //                         .selectAll(".country")
-    //                         .data(countries)
-    //                         .enter()
-    //                         .append("path")
-    //                             .attr("d", pathGuate)
-    //                             .attr("class", "country");
-
-
-    // //draw labels as HTML so it doesn't scale with viewbox
-    // var countriesLabels = d3.select("div.map").append("div").attr("class", "labels")
-    //                             .selectAll(".country")
-    //                             .data(countries)
-    //                             .enter()
-    //                             .append("p")
-    //                             .text(d=>d.properties["NAME"])
-    //                                 .style("left", function(d){
-    //                                     return pathGuate.centroid(d)[0]/w*100+"%";
-    //                                 })
-    //                                 .style("top", function(d){
-    //                                     return pathGuate.centroid(d)[1]/h*100+"%";
-    //                                 });
-
-    // console.log(countriesLabels);
 
 
 
@@ -245,49 +217,52 @@ function drawMassacres(massacres){
 //     doSpreads();
 
 
-    // function calculateCirclePacks(t,y,m){
-    //     //loop through each municipio
-    //     for(var municipio of filtered){
-    //         //store current massacres
-    //         municipio.properties["massacreSiblings_"+y+"_"+m] = [];
-    //         //filter to just massacres for the current time
-    //         for(var i=0; i<municipio.properties["massacres"].length; i++){
-    //             //only add if in the current date range
-    //             var current = municipio.properties["massacres"][i];
-    //             if(Date.parse(current.date) < Date.parse(t)){
-    //               municipio.properties["massacreSiblings_"+y+"_"+m].push({
-    //                 "uniqueId": i,
-    //                 "r": rScale(+current["total_killed"]),
-    //                 "caso": current.caso,
-    //                 "caso_ilustrativo": current["caso ilustrativo"]
-    //               })
-    //             }
-    //         }
-    //         municipio.properties["massacreSiblings_"+y+"_"+m] = d3.packSiblings(municipio.properties["massacreSiblings_"+y+"_"+m]);
-    //         municipio.properties["massacreMama_"+y+"_"+m] = d3.packEnclose(municipio.properties["massacreSiblings_"+y+"_"+m]);
-    //     }
-    // }
+//     function calculateCirclePacks(t,y,m){
+//         //loop through each municipio
+//         for(var municipio of filtered){
+//             //store current massacres
+//             municipio.properties["massacreSiblings_"+y+"_"+m] = [];
+//             //filter to just massacres for the current time
+//             for(var i=0; i<municipio.properties["massacres"].length; i++){
+//                 //only add if in the current date range
+//                 var current = municipio.properties["massacres"][i];
+//                 if(Date.parse(current.date) < Date.parse(t)){
+//                   //check weird value
+//                   if(current["caso ilustrativo"] == "10"){
+//                     console.log(current);
+//                   }
 
 
+//                   municipio.properties["massacreSiblings_"+y+"_"+m].push({
+//                     "uniqueId": i,
+//                     "r": rScale(+current["total_killed"]),
+//                     "caso": current.caso,
+//                     "caso_ilustrativo": current["caso ilustrativo"]
+//                   })
+//                 }
+//             }
+//             municipio.properties["massacreSiblings_"+y+"_"+m] = d3.packSiblings(municipio.properties["massacreSiblings_"+y+"_"+m]);
+//             municipio.properties["massacreMama_"+y+"_"+m] = d3.packEnclose(municipio.properties["massacreSiblings_"+y+"_"+m]);
+//         }
+//     }
+
+//     console.log(massacreData);
 
 
-    // var massacresPacked = makeSiblingPack(filtered,"massacres","total_killed");
-    // var massacresSpread =  applySimulation(massacresPacked);
+ 
 
 
     var viewBox = `0 0 ${w} ${h}`
-    console.log("viewBox is " +viewBox);
-    console.log(massacresSpread);
+    // console.log("viewBox is " +viewBox);
+    // console.log(massacresSpread);
     // viewBox is 0 0 629.562 658
     // console.log(massacresSpread);
     var testTime = "1960_0";
     var currentData = massacresSpread.municipios.filter(m => m.mama[testTime]);
-    console.log(currentData);
 
     //add spread bubbles
     massacreSvg = svg.append("svg")
                             .attr("viewBox", `0 0 629.562 658`);
-
 
     circleGroups =  massacreSvg.append("g")
                            .selectAll(".circleGroups")
@@ -304,7 +279,7 @@ function drawMassacres(massacres){
     //            .attr("stroke", "#fff")
     //            .attr("stroke-width", 0.1);
 
-    massacreCircles = circleGroups.selectAll(".innerCircle")
+    var massacreCircles = circleGroups.selectAll(".innerCircle")
                     .data(d=> d.mama[testTime].children)
                     .enter()
                     .append("circle")
@@ -324,113 +299,105 @@ function drawMassacres(massacres){
 
 function updateMassacres(currentData,timePeriod){
 
-  // //update with new data
-  // var circleGroups = svg.selectAll(".circleGroups").data(currentData);
-  // var massacreCircles = circleGroups.selectAll(".innerCircle")
-  //                 .data(d=> d.mama[timePeriod].children);
-
-  // console.log(circleGroups);
-  // //remove the ones that are leaving
-  // circleGroups.exit().remove();
-  // massacreCircles.exit().remove();
-
-  // //add new elements
-  // circleGroups.enter().append("g").attr("class", "circleGroups");
-  // massacreCircles.enter().append("circle").attr("class", "innerCircle");
-
-  // //update all to new positions
-  // circleGroups.transition().duration(250)
-  //        .attr("transform", d => `translate(${d.mama[timePeriod].x} ${d.mama[timePeriod].y})`);
-  // massacreCircles.transition().duration(250)
-  //        .attr("cx", d=>d.x)
-  //        .attr("cy", d=>d.y)
-  //        .attr("r", d=>d.r-0.1)
-  //        .attr("opacity", 0.8)
-  //        .attr("fill", "#000")
-  //        .attr("stroke", "#555")
-  //        .attr("stroke-width", 0.1);
+  //behaviour for updating groups
+  var circleGroups = massacreSvg.selectAll(".circleGroups")
+                        .data(currentData, d => d["codigo_mun"])
+                        .join(
+                          enter => enter.append("g")
+                                    .attr("class", "circleGroups")
+                                    .attr("transform", d => `translate(${d.mama[timePeriod].x} ${d.mama[timePeriod].y})`),
+                          update => update.attr("transform", d => `translate(${d.mama[timePeriod].x} ${d.mama[timePeriod].y})`),
+                          exit => exit.remove());
 
 
-  circleGroups.remove();
+  console.log(circleGroups.selectAll(".innerChildren"));
 
-  circleGroups =massacreSvg.selectAll(".circleGroups").data(currentData)
-                      .enter()
-                      .append("g")
-                      .attr("transform", d => `translate(${d.mama[timePeriod].x} ${d.mama[timePeriod].y})`);
+  var massacreCircles = circleGroups.selectAll(".innerChildren")
+                      .data(d=> d.mama[timePeriod].children, d=> d.caso ? d.caso : ("c"+ d.caso_ilustrativo))
+                      .join(enter=> enter.append("circle")
+                                         .attr("class", "innerChildren")
+                                         .attr("cx", d=>d.x)
+                                         .attr("cy", d=>d.y)
+                                         .attr("r", d=>d.r-0.1)
+                                         .attr("opacity", 0.9)
+                                         .attr("fill", "#fff")
+                                         .attr("stroke", "#555")
+                                         .attr("stroke-width", 0.1),
+                            update=> update.attr("cx", d=>d.x)
+                                           .attr("cy", d=>d.y), 
+                            exit => exit.remove());
 
-
-  massacreCircles = circleGroups.selectAll(".innerCircle")
-                  .data(d=> d.mama[timePeriod].children)
-                  .enter()
-                  .append("circle")
-                     .attr("class", "innerCircle")
-                     .attr("cx", d=>d.x)
-                     .attr("cy", d=>d.y)
-                     .attr("r", 0)
-                     .attr("r", d=>d.r-0.1)
-                     .attr("opacity", 0.9)
-                     .attr("fill", "#fff")
-                     .attr("stroke", "#555")
-                     .attr("stroke-width", 0.1);
-
+  console.log(massacreCircles);
 
 
 }
 
-function makeSiblingPack(features,attribute,radiusAttribute,t){
+// function makeSiblingPack(features,attribute,radiusAttribute,t){
 
-  //for each municipality
-  for(var feature of features){
-    //if the municipality has massacres
-    if(feature.properties[attribute]){
-      //create a property to store the calculations
-      feature.properties[attribute+"_siblings"] = [];
-      //loop through the massacres in this municipality
-      for(var i=0; i < feature.properties[attribute].length; i++){
-          var current = feature.properties[attribute][i];
-          //make sure the circle has the date included for filterting
-          feature.properties[attribute+"_siblings"].push({
-            "uniqueId": i,
-            "r": rScale(+current[radiusAttribute]),
-            "date": current.date
-          });
-      }
-     //calculate offsets for the small circles, and calculate size of the smallest enclosing circle
-     feature.properties[attribute+"_siblings"] = d3.packSiblings(feature.properties[attribute+"_siblings"]);
-     feature.properties[attribute+"_mama"] = d3.packEnclose(feature.properties[attribute+"_siblings"]);
-    } 
-  }
+//   //for each municipality
+//   for(var feature of features){
+//     //if the municipality has massacres
+//     if(feature.properties[attribute]){
+//       //create a property to store the calculations
+//       feature.properties[attribute+"_siblings"] = [];
+//       //loop through the massacres in this municipality
+//       for(var i=0; i < feature.properties[attribute].length; i++){
+//           var current = feature.properties[attribute][i];
+//           //make sure the circle has the date included for filterting
+//           feature.properties[attribute+"_siblings"].push({
+//             "uniqueId": i,
+//             "r": rScale(+current[radiusAttribute]),
+//             "date": current.date
+//           });
+//       }
+//      //calculate offsets for the small circles, and calculate size of the smallest enclosing circle
+//      feature.properties[attribute+"_siblings"] = d3.packSiblings(feature.properties[attribute+"_siblings"]);
+//      feature.properties[attribute+"_mama"] = d3.packEnclose(feature.properties[attribute+"_siblings"]);
+//     } 
+//   }
 
-  var nonZero = features.filter(function(feature){
-    if(feature.properties[attribute+"_siblings"].length>0) return feature;
-  });
+//   var nonZero = features.filter(function(feature){
+//     if(feature.properties[attribute+"_siblings"].length>0) return feature;
+//   });
 
-  return nonZero;
-}
+//   return nonZero;
+// }
 
-function applySimulation(nodes){
-    var nodePadding = 0.05;
-    const simulation = d3.forceSimulation(nodes)
-    // .force("cx", d3.forceX().x(d => w / 2).strength(0.005))
-    // .force("cy", d3.forceY().y(d => h / 2).strength(0.005))
-    .force("x", d3.forceX().x(d => pathGuate.centroid(d) ? pathGuate.centroid(d)[0] : 0).strength(1))
-    .force("y", d3.forceY().y(d => pathGuate.centroid(d) ? pathGuate.centroid(d)[1] : 0).strength(1))
-    // .force("charge", d3.forceManyBody().strength(-1))
-    .force("collide", d3.forceCollide().radius(d => d.properties["massacres_mama"].r  + nodePadding).strength(1))
-    .stop();
+// function applySimulation(nodes){
+//     var nodePadding = 0.05;
+//     const simulation = d3.forceSimulation(nodes)
+//     // .force("cx", d3.forceX().x(d => w / 2).strength(0.005))
+//     // .force("cy", d3.forceY().y(d => h / 2).strength(0.005))
+//     .force("x", d3.forceX().x(d => pathGuate.centroid(d) ? pathGuate.centroid(d)[0] : 0).strength(1))
+//     .force("y", d3.forceY().y(d => pathGuate.centroid(d) ? pathGuate.centroid(d)[1] : 0).strength(1))
+//     // .force("charge", d3.forceManyBody().strength(-1))
+//     .force("collide", d3.forceCollide().radius(d => d.properties["massacres_mama"].r  + nodePadding).strength(1))
+//     .stop();
 
-    let i = 0; 
-    while (simulation.alpha() > 0.01 && i < 200) {
-      simulation.tick(); 
-      i++;
-    }
+//     let i = 0; 
+//     while (simulation.alpha() > 0.01 && i < 200) {
+//       simulation.tick(); 
+//       i++;
+//     }
 
-    return simulation.nodes();
-}
+//     return simulation.nodes();
+// }
 
-var timeDomain = [new Date(1960,0,1), new Date(1996,11,31)];
+var timeDomain = [new Date(1960,0,1), new Date(1969,11,31)];
+var timeDomain2 = [new Date(1970,0,1), new Date(1979,11,31)];
+var timeDomain3 = [new Date(1980,0,1), new Date(1982,11,31)];
+var timeDomain4 = [new Date(1983,0,1), new Date(1996,11,31)];
+
 var timeScale = d3.scaleLinear()
                     .domain(timeDomain)
+                    .range([0,1]);
+
+var timeScale2 = d3.scaleLinear()
+                    .domain(timeDomain2)
+                    .range([0,1]);
+
+var timeScale3 = d3.scaleLinear()
+                    .domain(timeDomain3)
                     .range([0,1]);
 
 
@@ -444,7 +411,6 @@ function fmtMonthYear(time){
 function fmtMonthYearNum(time){
   var dateObj = new Date(time);
   var month = dateObj.getMonth();
-  console.log(month);
   var year = dateObj.getFullYear();
   return year + "_" + month;
 }
@@ -456,8 +422,6 @@ var yearElement = d3.select("p.year");
 //////////////////1)Smooth Animations, with RAF///////////////////////////////
 //////////////////////////////////////////////////////////////////////
 
-// var rootEl = document.querySelector('.scrollContainer');
-
 //observer for timeline
 var observerOptions = {
   root: null,
@@ -466,8 +430,7 @@ var observerOptions = {
 }
 
 let observer = new IntersectionObserver(intersectionCallback, observerOptions);
-
-var target = d3.select(".zoomer").node();
+var target = d3.select(".time1").node();
 observer.observe(target);
 
 var latestKnownTop = window.innerHeight;
@@ -499,10 +462,6 @@ function update(){
   var newDisplayTime = fmtMonthYear(newTime);
   var timePeriod = fmtMonthYearNum(newTime);
 
-  console.log(percent)
-  console.log(newTime);
-  console.log(timePeriod);
-
 
   if(newDisplayTime != currentDisplayTime){
     //update year text
@@ -515,7 +474,6 @@ function update(){
   }
 
 }
-
 
 var listening;
 
@@ -531,8 +489,131 @@ function intersectionCallback(entries, observer){
   }
 }
 
+//duplicate
+////////////////////////////////////////////
+
+let observer2 = new IntersectionObserver(intersectionCallback2, observerOptions);
+var target2 = d3.select(".time2").node();
+observer2.observe(target2);
 
 
+function onScroll2(){
+  latestKnownTop2 = target2.getBoundingClientRect().top;
+  requestTick2();
+}
+
+var ticking2 = false;
+
+function requestTick2(){
+  if(!ticking2){
+      requestAnimationFrame(update2);
+  }
+  ticking2 = true;
+}
+
+function update2(){
+    //reset tick to capture next scroll
+  ticking2 = false;
+  
+  var currentTop = latestKnownTop2;
+  var percent = (window.innerHeight - currentTop)/ window.innerHeight;
+  if(percent>1) percent = 1;
+  if(percent<0) percent = 0;
+
+  var newTime = timeScale2.invert(percent);
+
+  var newDisplayTime = fmtMonthYear(newTime);
+  var timePeriod = fmtMonthYearNum(newTime);
+
+
+  if(newDisplayTime != currentDisplayTime){
+    //update year text
+    currentDisplayTime = newDisplayTime
+    yearElement.text(currentDisplayTime);
+    //update massacres
+    var currentData = massacresSpread.municipios.filter(m => m.mama[timePeriod]);
+    updateMassacres(currentData,timePeriod);
+
+  }
+
+}
+
+var listening2;
+
+function intersectionCallback2(entries, observer){
+  if(entries[0].intersectionRatio>0){
+    if(!listening) {
+      window.addEventListener("scroll",onScroll2);
+    }
+    listening2 = true;
+  } else {
+    window.removeEventListener("scroll", onScroll2);
+    listening2 = false;
+  }
+}
+
+
+////////////////////////////////////////////
+
+let observer3 = new IntersectionObserver(intersectionCallback3, observerOptions);
+var target3 = d3.select(".time3").node();
+observer3.observe(target3);
+
+
+function onScroll3(){
+  latestKnownTop3 = target3.getBoundingClientRect().top;
+  requestTick3();
+}
+
+var ticking3 = false;
+
+function requestTick3(){
+  if(!ticking3){
+      requestAnimationFrame(update3);
+  }
+  ticking3 = true;
+}
+
+function update3(){
+    //reset tick to capture next scroll
+  ticking3 = false;
+  
+  var currentTop = latestKnownTop3;
+  var percent = (window.innerHeight - currentTop)/ window.innerHeight;
+  if(percent>1) percent = 1;
+  if(percent<0) percent = 0;
+
+  var newTime = timeScale3.invert(percent);
+
+  var newDisplayTime = fmtMonthYear(newTime);
+  var timePeriod = fmtMonthYearNum(newTime);
+
+
+  if(newDisplayTime != currentDisplayTime){
+    //update year text
+    currentDisplayTime = newDisplayTime
+    yearElement.text(currentDisplayTime);
+    //update massacres
+    var currentData = massacresSpread.municipios.filter(m => m.mama[timePeriod]);
+    updateMassacres(currentData,timePeriod);
+
+  }
+
+}
+
+var listening3;
+
+function intersectionCallback3(entries, observer){
+  if(entries[0].intersectionRatio>0){
+    if(!listening) {
+      window.addEventListener("scroll",onScroll3);
+    }
+    listening2 = true;
+  } else {
+    window.removeEventListener("scroll", onScroll3);
+    listening2 = false;
+  }
+}
 
 
 
