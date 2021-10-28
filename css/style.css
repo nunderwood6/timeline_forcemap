@@ -13,7 +13,7 @@ div{
 }
 
 div.opener {
-	background-image: url("../img/walking_feathered.jpg");
+	background-image: url("../img/palm_invasion.jpg");
 	background-size: cover;
 	background-position: 10% 50%;
 	width: 100%;
@@ -21,31 +21,33 @@ div.opener {
 	margin: 0 auto;
 	position: relative;
 	z-index: 5;
+	color: #fff;
 
 }
 
 div.opener h1 {
-	padding-top: 10px;
+	padding-top: 15%;
 	font-size: 4em;
 	font-family: 'Philosopher', sans-serif;
 	text-align: center;
-	margin: 0;
+	margin: 0 auto;
 }
 
 div.opener h2 {
 	font-size: 2em;
 	font-family: 'Philosopher', sans-serif;
-	text-align: center;
-	margin-top: 0px;
+	margin: 0 auto;
+	margin-top: 30px;
+	max-width: 600px;
+	padding: 0 15px 0 15px;
 }
 
 div.opener h4 {
 	font-size: 1.2em;
 	font-family: 'Philosopher', sans-serif;
-	position: absolute;
 	width: 100%;
 	text-align: center;
-	bottom: 15px;
+	margin-top: 30px;
 }
 
 div.introText, div.closingText {
