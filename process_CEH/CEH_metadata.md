@@ -1,5 +1,5 @@
 #Coding Massacres from the CEH Report
-Massacres were hand coded from the full CEH report, a PDF document with more than 4,000 pages. There were two distinct types. Most of the massacres were coded from the Casos Presentados section of the Appendix, which contains only short descriptions of each event. The remainder were coded from the Casos Ilustrativos section, which includes in depth descriptions of each massacre, including background information and the aftermath. Descriptions were copy/pasted directly from the report. I used the municipio+department name as a join code to add municipio codes so the massacres could be mapped, and manually checked each row.
+Massacres were hand coded from the full CEH report, a PDF document with more than 4,000 pages. There were two distinct types. Most of the massacres were coded from the Casos Presentados section of the Appendix, which contains only short descriptions of each event. The remainder were coded from the Casos Ilustrativos section, which includes in depth descriptions of each massacre, including background information and the aftermath. Descriptions were copy/pasted directly from the report. I used the municipio+department name as a join code to add a column with municipio codes so the massacres could be mapped, and manually spot checked each row.
 
 
 The files in the *input* folder,*casos_presentados.csv* and *casos_ilustrativos.csv*, are downloaded directly from the Google Sheets where the massacres were hand codied.
@@ -14,4 +14,11 @@ For the purpose of the timeline, each massacre needed to be assigned a Javascrip
 
 
 #Structuring by Municipio
-Next, massacres were nested by municipio and added as a property of the municipio geojson, which was then written to a file called *massacres_nested.geojson*.
+Next, massacres were nested by municipio and added as a property of the municipio geojson, which was then written to a file called *massacres_nested.geojson*. Massacres were sorted by size in descending for efficient circle packing.
+
+#Calculating circle positions
+To visualize multiple massacres aggregated at the municipal level, I used D3's circle packing and force simulation algorithms to cluster circles as close as possible to the municipio's centroid without overlapping other circles, in *calculateCirclePositions.js*. Positions needed to be calculated for each time period since the circles nudge each other around as they are added. Each circle has positions stored for each time period. Since the positions are pixel values, they are specific to the viewbox size where they are calculated. The script console.log's the viewbox dimensions so the corresponding values can be updated in *main.js*.
+
+
+
+
