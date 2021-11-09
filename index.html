@@ -13,9 +13,14 @@
 		
 		<div class="opener">
 			<h1>The Land of Many Trees</h1>
-			<h2>Visualizing Dispossession, Displacement, and The Defense of Life in Guatemala</h2>
+			<h2>Visualizing Dispossession, Displacement, and the Defense of Life in Guatemala</h2>
 			<h4>By Nick Underwood | October 2021</h4>
 		</div>
+
+
+
+
+		<!-- Chapter 1 -->
 
 		<div class="introText">
 			<p><span class="firstCharacter">L</span>orem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
@@ -23,10 +28,12 @@
 	 	</div>
 
 
+	 	<!-- Chapter 2 -->
+
 	 	<div class="scrollContainer">
 			 	<div class="outer sticky">
     	        	<div class="labels">
-    	        		<p class="year" style="top: 3%; right: 3%;">1960</p>
+    	        		<p class="year" style="display: none; top: 3%; right: 3%;">1960</p>
 <!-- 	    	        		<div class="small">
     	        			<p class="countryLabel" style="top: 30%; left:5%;">Mexico</p>
     	        			<p class="countryLabel" style="top: 20%; right:3%;">Belize</p>
@@ -35,18 +42,29 @@
 
     	        		</div> -->
     	        	</div>
-			        <div class="map">
+			        <div id="map">
 
 			        </div>
 		    	</div>
 
 		    <article class="textContainer">
 		    	
+		    	<div class="spacer"></div>
+
+		    	<div class="discrete step" forward='zoomToEast' backward='zoomOutFull'>
+		    	    <p>"The Chortí people, located in the eastern region, were repressed with great harshness. During this period, indigenous leaders or communities who made land claims and demanded better working conditions were stigmatized as “communists” and selectively repressed."</p>
+		    	</div>
+
+		    	<div class="spacer"></div>
+
+		    	<div class="spacer"></div>
+
+
 		    	<div class="step time1">
                     <p>The conflict intensified in the 1960's, when CIA-trained counter terror squads disappeared and killed thousands of people in the eastern part of the country.</p>
                 </div>
 
-               	<div class="spacer"></div>
+               	
 
                	<div class="spacer"></div>
 
@@ -77,9 +95,9 @@
 		<script src="libs/topojson.min.js"></script>
 		<script src="libs/d3-geo-projection.min.js"></script>
 	   <script src="libs/d3.v5.min.js"></script>
-	   <script src="libs/jquery-3.3.1.min.js"></script>
 	   <script src="libs/d3-scale-chromatic.v1.min.js"></script>
 	   <script src="libs/d3-queue.v3.min.js"></script>
+	   <script src="libs/enter-view.js"></script>
 		<!-- <script src="js/calculateCirclePositions.js"></script> -->
 		<script src="js/main.js"></script>
 	</body>

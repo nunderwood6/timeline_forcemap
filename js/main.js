@@ -1,4 +1,10 @@
+window.onbeforeunload = function () {
+  window.scrollTo(0, 0);
+}
+
 var svg;
+var svgInner;
+var albersGuate;
 var pathGuate;
 var rScale;
 var rasterBounds;
@@ -7,6 +13,10 @@ var circleGroups;
 var outerCircles;
 var massacresSpread;
 var massacreSvg;
+var w;
+var h;
+var scaleFactor;
+
 
 function loadData(){
     Promise.all([
@@ -14,19 +24,23 @@ function loadData(){
       d3.json("data/focusArea_extent.geojson"),
       d3.json("data/raster_extent.geojson"),
       d3.json("data/countries_topo.json"),
-      d3.json("data/circle_positions.json")
+      d3.json("data/circle_positions.json"),
+      d3.json("data/home_points.geojson")
     ])
-    .then(function([municipiosTOPO,focusAreaJSON,rasterAreaJSON,countriesTOPO,circlePositionsJSON]){
+    .then(function([municipiosTOPO,focusAreaJSON,rasterAreaJSON,countriesTOPO,circlePositionsJSON,homesJSON]){
 
         var municipios = topojson.feature(municipiosTOPO, municipiosTOPO.objects.municipios).features;
         var focusBox = focusAreaJSON;
         var rasterBox = rasterAreaJSON;
         var countries = topojson.feature(countriesTOPO, countriesTOPO.objects.countries).features;
+        var homes = homesJSON.features;
         massacresSpread = circlePositionsJSON;
 
         positionMap(municipios,focusBox,rasterBox,countries);
-        drawMunicipios(municipios);
+        // drawMunicipios(municipios);
+        drawHomes(homes);
         drawMassacres();
+        addDiscreteListeners();
 
     });
 }
@@ -34,8 +48,9 @@ function loadData(){
 //creates full screen base map and lines up raster and vector layers
 function positionMap(municipios,focusBox,rasterBox,countries){
 
-    w = $("div.map").width();
-    h = $("div.map").height();
+    w = document.getElementById("map").offsetWidth;
+    h = document.getElementById("map").offsetHeight;
+
 
     var margin = {top: 5, right: 5, bottom: 5, left: 5}
 
@@ -45,7 +60,7 @@ function positionMap(municipios,focusBox,rasterBox,countries){
       "latitude": 15.7779
     };
     //albers centered on guatemala
-    const albersGuate = d3.geoConicEqualArea()
+    albersGuate = d3.geoConicEqualArea()
                       .parallels([14.8,16.8]) 
                       .rotate([centerLocation["longitude"]*-1,0,0])
                       .center([0,centerLocation["latitude"]])
@@ -59,28 +74,31 @@ function positionMap(municipios,focusBox,rasterBox,countries){
     var computedBox = pathGuate.bounds(focusBox)
     focusWidth = computedBox[1][0] - computedBox[0][0];
 
-    svg = d3.select("div.map")
+    svg = d3.select("div#map")
               .append("svg")
               .attr("class", "magic")
               .attr("viewBox", `0 0 ${w} ${h}`)
               .attr("overflow", "visible")
               .style("position","relative");
 
+    svgInner = svg.append("g")
+            .attr("class", "inner");
 
     //calculate raster extent percentages
     rasterBounds = pathGuate.bounds(rasterBox);
-    var rasterWidth = (rasterBounds[1][0] - rasterBounds[0][0])/w*100;
-    var rasterOrigin = [rasterBounds[0][0]/w*100,rasterBounds[0][1]/h*100];
+
+    // var rasterWidth = (rasterBounds[1][0] - rasterBounds[0][0])/w*100;
+    var rasterWidth = rasterBounds[1][0] - rasterBounds[0][0];
+    var rasterHeight = rasterBounds[1][1] - rasterBounds[0][1];
+    var rasterOrigin = [rasterBounds[0][0],rasterBounds[0][1]];
 
     //append raster background
-    svg.append("image")
-            .attr("href", "img/dot_test_hs_background_brighter.jpg")
-            .attr("x", rasterOrigin[0]+"%")
-            .attr("y", rasterOrigin[1]+"%")
-            .attr("width", rasterWidth + "%")
-            .attr("transform", "translate(0,5)");
-
-
+    svgInner.append("image")
+            .attr("href", "img/indigenous_only.jpg")
+            .attr("x", rasterOrigin[0])
+            .attr("y", rasterOrigin[1])
+            .attr("width", rasterWidth + "px")
+            .attr("height", rasterHeight + "px");
 
 }
 
@@ -91,7 +109,7 @@ function drawMunicipios(municipioData){
                           .domain([0,100]);
 
     //draw municipios
-    var municipios = svg.append("g")
+    var municipios = svgInner.append("g")
                             .selectAll(".municipio")
                             .data(municipioData)
                             .enter()
@@ -102,6 +120,23 @@ function drawMunicipios(municipioData){
 
 }
 
+function drawHomes(homes){
+
+    var homePoints = svgInner.append("g")
+                          .attr("class", "homes")
+                          .selectAll("circle")
+                          .data(homes)
+                          .enter()
+                          .append("circle")
+                            .attr("cx", d=> albersGuate(d.geometry.coordinates)[0])
+                            .attr("cy", d=> albersGuate(d.geometry.coordinates)[1])
+                            .attr("r", 2)
+                            .attr("fill", "#fff")
+                            .attr("stroke", "#000")
+                            .attr("stroke-width", 0.3);
+
+}
+
 
 function drawMassacres(){
 
@@ -109,24 +144,23 @@ function drawMassacres(){
                   .domain([0,400])
                   .range([0, focusWidth/55]);
 
-
-    var viewBox = `0 0 ${w} ${h}`
-    // console.log("viewBox is " +viewBox);
-    // viewBox is 0 0 629.562 658
     var startTime = "1960_0";
     var currentData = massacresSpread.municipios.filter(m => m.mama[startTime]);
 
-    //add spread bubbles
-    massacreSvg = svg.append("svg")
-                            .attr("viewBox", `0 0 678.359 709`);
 
-    circleGroups =  massacreSvg.append("g")
-                           .selectAll(".circleGroups")
+    // viewBox from "calculateCirclePositions" was 0 0 678.359 709
+    //need to adjust values to account for the old viewbox
+    //cant set directly through viewbox since we will animate for zooming
+    scaleFactor = h/709;
+
+    var massacreGroup = svg.append("g");
+
+    circleGroups =  massacreGroup.selectAll(".circleGroups")
                                .attr("class", "circleGroups")
                                .data(currentData)
                                .enter()
                                .append("g")
-                               .attr("transform", d => `translate(${d.mama[startTime].x} ${d.mama[startTime].y})`);
+                               .attr("transform", d => `translate(${d.mama[startTime].x*scaleFactor} ${d.mama[startTime].y*scaleFactor})`);
 
     // outerCircles = circleGroups.append("circle")
     //            .attr("class", "outerCircle")
@@ -140,49 +174,96 @@ function drawMassacres(){
                     .enter()
                     .append("circle")
                        .attr("class", "innerCircle")
-                       .attr("cx", d=>d.x)
-                       .attr("cy", d=>d.y)
+                       .attr("cx", d=>d.x*scaleFactor)
+                       .attr("cy", d=>d.y*scaleFactor)
                        .attr("r", 0)
-                       .attr("r", d=>d.r-0.1)
-                       .attr("opacity", 0.9)
+                       .attr("r", d=>(d.r-0.1)*scaleFactor)
+                       .attr("fill-opacity", 0.9)
                        .attr("fill", "#fff")
                        .attr("stroke", "#555")
                        .attr("stroke-width", 0.1);
-
-
 
 }
 
 function updateMassacres(currentData,timePeriod){
 
   //behaviour for updating groups
-  var circleGroups = massacreSvg.selectAll(".circleGroups")
+  var circleGroups = svg.selectAll(".circleGroups")
                         .data(currentData, d => d["codigo_mun"])
                         .join(
                           enter => enter.append("g")
                                     .attr("class", "circleGroups")
-                                    .attr("transform", d => `translate(${d.mama[timePeriod].x} ${d.mama[timePeriod].y})`),
-                          update => update.attr("transform", d => `translate(${d.mama[timePeriod].x} ${d.mama[timePeriod].y})`),
+                                    .attr("transform", d => `translate(${d.mama[timePeriod].x*scaleFactor} ${d.mama[timePeriod].y*scaleFactor})`),
+                          update => update.attr("transform", d => `translate(${d.mama[timePeriod].x*scaleFactor} ${d.mama[timePeriod].y*scaleFactor})`),
                           exit => exit.remove());
 
   var massacreCircles = circleGroups.selectAll(".innerChildren")
                       .data(d=> d.mama[timePeriod].children, d=> d.caso ? d.caso : ("c"+ d.caso_ilustrativo))
                       .join(enter=> enter.append("circle")
                                          .attr("class", "innerChildren")
-                                         .attr("cx", d=>d.x)
-                                         .attr("cy", d=>d.y)
-                                         .attr("r", d=>d.r-0.1)
-                                         .attr("opacity", 0.9)
+                                         .attr("cx", d=>d.x*scaleFactor)
+                                         .attr("cy", d=>d.y*scaleFactor)
+                                         .attr("r", d=>(d.r-0.1)*scaleFactor)
+                                         .attr("fill-opacity", 0.9)
                                          .attr("fill", "#fff")
                                          .attr("stroke", "#555")
                                          .attr("stroke-width", 0.1),
-                            update=> update.attr("cx", d=>d.x)
-                                           .attr("cy", d=>d.y), 
+                            update=> update.attr("cx", d=>d.x*scaleFactor)
+                                           .attr("cy", d=>d.y*scaleFactor), 
                             exit => exit.remove());
 
 
 }
 
+
+//////////////////////////////////////////////////////////////////////
+//////////////////Code for Discrete Animations///////////////////////////////
+//////////////////////////////////////////////////////////////////////
+
+
+  function addDiscreteListeners(){
+    
+    var stepSel = d3.selectAll(".discrete");
+
+    enterView({
+      selector: stepSel.nodes(),
+      offset: 0,
+      enter: el=> {
+        const index = d3.select(el).attr('forward');
+        updateChart[index]();
+      },
+      exit: el => {
+        let index = d3.select(el).attr('backward');
+        updateChart[index]();
+      }
+    });
+ }
+
+
+//////discrete animations
+
+var updateChart = {
+  zoomToEast: function(){
+    console.log("Zoom to east!");
+    
+    var left = 0.5*w,
+    top= 0.5*h,
+    width = .3*w,
+    height = .3*h;
+
+
+    svg.transition("zoom east").duration(2000).attr("viewBox", `${left} ${top} ${width} ${height}`);
+  },
+  zoomOutFull: function(){
+    console.log("Zoom out full!");
+    svg.transition("Zoom out full!").duration(2000).attr("viewBox", `0 0 ${w} ${h}`);
+  }
+
+}
+
+//////////////////////////////////////////////////////////////////////
+//////////////////Code for Continuous Animations///////////////////////////////
+//////////////////////////////////////////////////////////////////////
 
 var timeDomain = [new Date(1960,0,1), new Date(1969,11,31)];
 var timeDomain2 = [new Date(1970,0,1), new Date(1979,11,31)];

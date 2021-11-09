@@ -7,6 +7,8 @@ var circleGroups;
 var outerCircles;
 var massacresSpread;
 var massacreSvg;
+var w;
+var h;
 
 function loadData(){
     Promise.all([
@@ -32,8 +34,8 @@ function loadData(){
 //creates full screen base map and lines up raster and vector layers
 function positionMap(municipios,focusBox,rasterBox,countries){
 
-    w = $("div.map").width();
-    h = $("div.map").height();
+    w = document.getElementById("map").offsetWidth;
+    h = document.getElementById("map").offsetHeight;
 
     var margin = {top: 5, right: 5, bottom: 5, left: 5}
 
