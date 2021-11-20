@@ -9,6 +9,7 @@ var pathGuate;
 var rScale;
 var rasterBounds;
 var focusWidth;
+var focusHeight;
 var circleGroups;
 var outerCircles;
 var massacresSpread;
@@ -16,6 +17,20 @@ var massacreSvg;
 var w;
 var h;
 var scaleFactor;
+var marginAmount = 5;
+var zoomBox;
+var renderedBox;
+var zoomFactor;
+
+// const zoom = d3.zoom()
+//       .scaleExtent([1, 8])
+//       .on("zoom", zoomed);
+
+
+// function zoomed() {
+//     svgInner.attr("transform", d3.event.transform);
+//     svgInner.attr("stroke-width", 1 / d3.event.transform.k);
+//   }
 
 
 function loadData(){
@@ -25,11 +40,13 @@ function loadData(){
       d3.json("data/raster_extent.geojson"),
       d3.json("data/countries_topo.json"),
       d3.json("data/circle_positions.json"),
-      d3.json("data/home_points.geojson")
+      d3.json("data/home_points.geojson"),
+      d3.json("data/departamentos_topo.json")
     ])
-    .then(function([municipiosTOPO,focusAreaJSON,rasterAreaJSON,countriesTOPO,circlePositionsJSON,homesJSON]){
+    .then(function([municipiosTOPO,focusAreaJSON,rasterAreaJSON,countriesTOPO,circlePositionsJSON,homesJSON,departamentosTOPO]){
 
         var municipios = topojson.feature(municipiosTOPO, municipiosTOPO.objects.municipios).features;
+        var departamentos = topojson.feature(departamentosTOPO,departamentosTOPO.objects.departamentos).features;
         var focusBox = focusAreaJSON;
         var rasterBox = rasterAreaJSON;
         var countries = topojson.feature(countriesTOPO, countriesTOPO.objects.countries).features;
@@ -37,10 +54,12 @@ function loadData(){
         massacresSpread = circlePositionsJSON;
 
         positionMap(municipios,focusBox,rasterBox,countries);
-        // drawMunicipios(municipios);
+        // drawMunicipios(municipios,departamentos);
         drawHomes(homes);
         drawMassacres();
         addDiscreteListeners();
+        addLabels();
+
 
     });
 }
@@ -73,16 +92,38 @@ function positionMap(municipios,focusBox,rasterBox,countries){
     //store width of focus area to scale vectors
     var computedBox = pathGuate.bounds(focusBox)
     focusWidth = computedBox[1][0] - computedBox[0][0];
+    focusHeight = computedBox[1][1] - computedBox[0][1];
+
+
 
     svg = d3.select("div#map")
               .append("svg")
               .attr("class", "magic")
+              .style("width", "100%")
+              .style("height", "100%")
+              // .style("max-width", "none")
+              // .style("max-height", "none")
               .attr("viewBox", `0 0 ${w} ${h}`)
+              .attr("preserveAspectRatio", "xMidYMid meet")
               .attr("overflow", "visible")
               .style("position","relative");
 
     svgInner = svg.append("g")
-            .attr("class", "inner");
+            .attr("class", "inner")
+            // .attr("overflow", "visible")
+            // .attr("viewBox", `0 0 ${w} ${h}`);
+
+    //add focusBox as rectangle so we can calculate bbox for scaling later
+    renderedBox = svgInner.append("rect")
+              .attr("x", computedBox[0][0])
+              .attr("y", computedBox[0][1])
+              .attr("width", focusWidth)
+              .attr("height", focusHeight)
+              .attr("fill", "none")
+              .attr("stroke", "#fff")
+              .attr("stroke-width", 2);
+
+    calculateZoomFactor();
 
     //calculate raster extent percentages
     rasterBounds = pathGuate.bounds(rasterBox);
@@ -94,19 +135,22 @@ function positionMap(municipios,focusBox,rasterBox,countries){
 
     //append raster background
     svgInner.append("image")
-            .attr("href", "img/indigenous_only.jpg")
+            .attr("href", "img/dot_all.jpg")
             .attr("x", rasterOrigin[0])
             .attr("y", rasterOrigin[1])
             .attr("width", rasterWidth + "px")
             .attr("height", rasterHeight + "px");
 
+    //add event listener for resize
+    d3.select(window).on('resize', calculateZoomFactor);
+
 }
 
 
-function drawMunicipios(municipioData){
+function drawMunicipios(municipioData,departamentoData){
 
-  var colorScale = d3.scaleSequential(d3.interpolateBlues)
-                          .domain([0,100]);
+  // var colorScale = d3.scaleSequential(d3.interpolateBlues)
+  //                         .domain([0,100]);
 
     //draw municipios
     var municipios = svgInner.append("g")
@@ -116,7 +160,20 @@ function drawMunicipios(municipioData){
                             .append("path")
                                 .attr("d", pathGuate)
                                 .attr("class", "municipio")
+                                .attr("id", function(d){
+                                  return "m" + d.properties["codigo_mun"];
+                                })
                                 .attr("fill", "none");
+
+    // var departamentos = svgInner.append("g")
+    //                         .selectAll(".departamento")
+    //                         .data(departamentoData)
+    //                         .enter()
+    //                         .append("path")
+    //                             .attr("d", pathGuate)
+    //                             .attr("class", "departamento")
+    //                             .attr("fill", "none");
+
 
 }
 
@@ -127,14 +184,56 @@ function drawHomes(homes){
                           .selectAll("circle")
                           .data(homes)
                           .enter()
-                          .append("circle")
-                            .attr("cx", d=> albersGuate(d.geometry.coordinates)[0])
-                            .attr("cy", d=> albersGuate(d.geometry.coordinates)[1])
-                            .attr("r", 2)
+                          .append("rect")
+                            .attr("x", d=> albersGuate(d.geometry.coordinates)[0]-1)
+                            .attr("y", d=> albersGuate(d.geometry.coordinates)[1]-1)
+                            .attr("width", 2)
+                            .attr("height", 2)
                             .attr("fill", "#fff")
                             .attr("stroke", "#000")
-                            .attr("stroke-width", 0.3);
+                            .attr("stroke-width", 0.8);
 
+     // //testing viewbox
+     // zoomBox = svgInner.append("rect")
+     //                .attr("x", .55*w)
+     //                .attr("y", .51*h)
+     //                .attr("width", .30*w)
+     //                .attr("height", .36*h)
+     //                .attr("stroke", "#fff")
+     //                .attr("fill", "none");
+
+}
+
+function addLabels(){
+
+    calculateZoomFactor();
+
+    var labels = svgInner.append("g").attr("class", "labels");
+
+    //eastern labels
+    var east = labels.append("g")
+              .attr("class", "east");
+
+    var eastLabels = [
+      {"text": "Lago de Izabal",
+        "x": ".76",
+        "y": ".57",
+        "textSize": 12
+      }
+    ];
+
+    labels.selectAll(".eastLabel")
+          .data(eastLabels)
+          .enter()
+          .append("text")
+              .attr("class", "label eastLabel")
+              .attr("x", d=>d.x*w)
+              .attr("y", d=>d.y*h)
+              .attr("font-size", d => d.textSize*zoomFactor +"px")
+              .attr("fill", "#aaa")
+              .attr("text-anchor", "middle")
+              .attr("opacity", 0)
+              .text(d=>d["text"]);
 }
 
 
@@ -174,6 +273,7 @@ function drawMassacres(){
                     .enter()
                     .append("circle")
                        .attr("class", "innerCircle")
+                       .attr("caso", d=>d.caso)
                        .attr("cx", d=>d.x*scaleFactor)
                        .attr("cy", d=>d.y*scaleFactor)
                        .attr("r", 0)
@@ -201,6 +301,7 @@ function updateMassacres(currentData,timePeriod){
                       .data(d=> d.mama[timePeriod].children, d=> d.caso ? d.caso : ("c"+ d.caso_ilustrativo))
                       .join(enter=> enter.append("circle")
                                          .attr("class", "innerChildren")
+                                         .attr("caso", d=> d.caso ? ("c"+ d.caso) : ("c"+ d.caso_ilustrativo))
                                          .attr("cx", d=>d.x*scaleFactor)
                                          .attr("cy", d=>d.y*scaleFactor)
                                          .attr("r", d=>(d.r-0.1)*scaleFactor)
@@ -213,6 +314,23 @@ function updateMassacres(currentData,timePeriod){
                             exit => exit.remove());
 
 
+}
+
+
+function calculateZoomFactor(){
+  var originalBoxWidth = renderedBox.node().getBBox().width;
+  var clientBoxWidth = renderedBox.node().getBoundingClientRect().width;
+  zoomFactor = originalBoxWidth/clientBoxWidth;
+  resizeLabels();
+}
+
+function resizeLabels(){
+  console.log("resizing text");
+  console.log(zoomFactor);
+  console.log(svg.selectAll(".label"));
+
+  svg.selectAll(".label")
+        .attr("font-size", 12*zoomFactor);
 }
 
 
@@ -243,20 +361,42 @@ function updateMassacres(currentData,timePeriod){
 //////discrete animations
 
 var updateChart = {
-  zoomToEast: function(){
-    console.log("Zoom to east!");
-    
-    var left = 0.5*w,
-    top= 0.5*h,
-    width = .3*w,
-    height = .3*h;
+  zoomToEast: function(){    
+
+    var w2 = .30*w,
+    h2 = 0.36*h,
+    left = 0.55*w,
+    top= 0.51*h;
+
+    //consider trying this: OR setting slice instead of meet
+    //would need to add resize listener and update 
+    // //tall aspect ratio/mobile numbers
+    // var w2 = .30*w,
+    // h2 = 0.30*h,
+    // left = 0.55*w,
+    // top= 0.55*h;
+
+    //zoom
+    svg.transition("zoom east").duration(1500).attr("viewBox", `${left} ${top} ${w2} ${h2}`)
+            .on("end", function(){
+              //resized, need to calculate zoom
+              calculateZoomFactor();
+              //fade in east labels
+              svg.selectAll(".eastLabel").transition("fade in east labels")
+                                         .duration(500)
+                                         .attr("opacity", 1);
+              // //highlight camotan
+              // svg.select("#m2005").classed("highlight", true);
+
+            });
 
 
-    svg.transition("zoom east").duration(2000).attr("viewBox", `${left} ${top} ${width} ${height}`);
   },
   zoomOutFull: function(){
-    console.log("Zoom out full!");
-    svg.transition("Zoom out full!").duration(2000).attr("viewBox", `0 0 ${w} ${h}`);
+    svg.transition("Zoom out full!").duration(1500).attr("viewBox", `0 0 ${w} ${h}`);
+    svg.selectAll(".eastLabel").transition("fade out east labels")
+                               .duration(500)
+                               .attr("opacity", 0);
   }
 
 }
