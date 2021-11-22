@@ -54,7 +54,7 @@ function loadData(){
         massacresSpread = circlePositionsJSON;
 
         positionMap(municipios,focusBox,rasterBox,countries);
-        // drawMunicipios(municipios,departamentos);
+        drawMunicipios(municipios,departamentos);
         drawHomes(homes);
         drawMassacres();
         addDiscreteListeners();
@@ -179,25 +179,70 @@ function drawMunicipios(municipioData,departamentoData){
 
 function drawHomes(homes){
 
+    var symbolSize = 2;
+    var labelPadding = 0.5;
+
     var homePoints = svgInner.append("g")
                           .attr("class", "homes")
                           .selectAll("circle")
                           .data(homes)
                           .enter()
                           .append("rect")
-                            .attr("x", d=> albersGuate(d.geometry.coordinates)[0]-1)
-                            .attr("y", d=> albersGuate(d.geometry.coordinates)[1]-1)
-                            .attr("width", 2)
-                            .attr("height", 2)
+                            .attr("x", d=> albersGuate(d.geometry.coordinates)[0]-symbolSize/2)
+                            .attr("y", d=> albersGuate(d.geometry.coordinates)[1]-symbolSize/2)
+                            .attr("width", symbolSize)
+                            .attr("height", symbolSize)
                             .attr("fill", "#fff")
                             .attr("stroke", "#000")
-                            .attr("stroke-width", 0.8);
+                            .attr("stroke-width", 0.5);
+
+    //home labels
+    var homeLabels = svgInner.append("g")
+                        .attr("class", "homeLabels")
+                        .selectAll("text")
+                        .data(homes)
+                        .enter()
+                        .append("g")
+                          .attr("class", d=> d.properties["name"] + " label")
+                          .attr("transform", function(d){
+                            if(d.properties.position == "right"){
+                              var x = albersGuate(d.geometry.coordinates)[0]+(symbolSize+labelPadding);
+                              var y = albersGuate(d.geometry.coordinates)[1]-(symbolSize+labelPadding);
+                            } else {
+                              var x = albersGuate(d.geometry.coordinates)[0]-(symbolSize+labelPadding);
+                              var y = albersGuate(d.geometry.coordinates)[1]+(symbolSize+labelPadding);
+                            }
+                            return `translate(${x},${y})`;
+                          })
+                          .html(function(d){
+                            if(d.properties.position == "right"){
+                              return `<text><tspan x="0" dy="-0.5em">${d.properties["name"]+ "'s home"}</tspan>
+                                   <tspan x="0" dy="1em">${d.properties["town"]}</tspan></text>`;
+                            } else {
+                              return `<text><tspan x="1" dx="0.2em" dy="0.5em">${d.properties["town"]}</tspan>
+                                   <tspan x="0" dx="0.2em" dy="1em">${d.properties["name"]+ "'s home"}</tspan></text>`;
+                            }
+                          })
+                          .attr("font-size", d=>d.textSize)
+                          .attr("text-anchor", function(d){
+                              if(d.properties.position == "right"){
+                                var anchor = "start";
+                              } else{
+                                var anchor = "end";
+                              }
+                              return anchor;
+                          })
+                          .attr("opacity", 0)
+                          .attr("fill", "#fff")
+                          .attr("font-weight", "bold")
+                          .attr("text-shadow", "text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;");
+
 
      // //testing viewbox
      // zoomBox = svgInner.append("rect")
-     //                .attr("x", .55*w)
-     //                .attr("y", .51*h)
-     //                .attr("width", .30*w)
+     //                .attr("x", .35*w)
+     //                .attr("y", .35*h)
+     //                .attr("width", .40*w)
      //                .attr("height", .36*h)
      //                .attr("stroke", "#fff")
      //                .attr("fill", "none");
@@ -218,7 +263,17 @@ function addLabels(){
       {"text": "Lago de Izabal",
         "x": ".76",
         "y": ".57",
-        "textSize": 12
+        "textSize": 11,
+        "font-style": "italic",
+        "fill": "#aaa",
+      },
+      {"text": "Ch'orti'   Territory",
+        "x": ".72",
+        "y": ".735",
+        "textSize": 14,
+        "fill": "#fffee0",
+        "letter-spacing": "2.5px",
+        "font-weight": "bold"
       }
     ];
 
@@ -230,10 +285,15 @@ function addLabels(){
               .attr("x", d=>d.x*w)
               .attr("y", d=>d.y*h)
               .attr("font-size", d => d.textSize*zoomFactor +"px")
-              .attr("fill", "#aaa")
+              .attr("font-style", d=> d["font-style"] ? d["font-style"] : "normal")
+              .attr("fill", d => d.fill)
               .attr("text-anchor", "middle")
+              .attr("letter-spacing", d=> d["letter-spacing"] ? d["letter-spacing"] : "normal")
+              .attr("font-weight", d=> d["font-weight"] ? d["font-weight"] : "normal")
               .attr("opacity", 0)
+              .attr("text-shadow", "2px 2px 1px black;")
               .text(d=>d["text"]);
+
 }
 
 
@@ -325,12 +385,11 @@ function calculateZoomFactor(){
 }
 
 function resizeLabels(){
-  console.log("resizing text");
-  console.log(zoomFactor);
-  console.log(svg.selectAll(".label"));
 
   svg.selectAll(".label")
-        .attr("font-size", 12*zoomFactor);
+        .attr("font-size", function(d){
+          return d.textSize*zoomFactor +"px";
+        });
 }
 
 
@@ -382,7 +441,7 @@ var updateChart = {
               //resized, need to calculate zoom
               calculateZoomFactor();
               //fade in east labels
-              svg.selectAll(".eastLabel").transition("fade in east labels")
+              svg.selectAll(".eastLabel,.Wilmer,.Juan").transition("fade in east labels")
                                          .duration(500)
                                          .attr("opacity", 1);
               // //highlight camotan
@@ -393,12 +452,30 @@ var updateChart = {
 
   },
   zoomOutFull: function(){
-    svg.transition("Zoom out full!").duration(1500).attr("viewBox", `0 0 ${w} ${h}`);
-    svg.selectAll(".eastLabel").transition("fade out east labels")
+    svg.transition("Zoom out full!").duration(1500).attr("viewBox", `0 0 ${w} ${h}`)
+                .on("end", function(){
+                    calculateZoomFactor();
+                });
+    svg.selectAll(".eastLabel,.Wilmer,.Juan").transition("fade out east labels")
                                .duration(500)
                                .attr("opacity", 0);
-  }
+  },
+  zoomToPanzos: function(){
 
+      var w2 = .40*w,
+      h2 = 0.36*h,
+      left = 0.38*w,
+      top= 0.35*h;
+      //zoom to new location
+      svg.transition("Zoom panzos").duration(1500).attr("viewBox", `${left} ${top} ${w2} ${h2}`)
+                .on("end", function(){
+                    calculateZoomFactor();
+                });
+      //zoom out old labels
+      svg.selectAll(".eastLabel,.Wilmer,.Juan").transition("fade out east labels")
+                                 .duration(500)
+                                 .attr("opacity", 0);
+  }
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -534,7 +611,7 @@ function requestTick2(){
 }
 
 function update2(){
-    //reset tick to capture next scroll
+  //reset tick to capture next scroll
   ticking2 = false;
   
   var currentTop = latestKnownTop2;
@@ -564,7 +641,7 @@ var listening2;
 
 function intersectionCallback2(entries, observer){
   if(entries[0].intersectionRatio>0){
-    if(!listening) {
+    if(!listening2) {
       window.addEventListener("scroll",onScroll2);
     }
     listening2 = true;
@@ -627,7 +704,7 @@ var listening3;
 
 function intersectionCallback3(entries, observer){
   if(entries[0].intersectionRatio>0){
-    if(!listening) {
+    if(!listening3) {
       window.addEventListener("scroll",onScroll3);
     }
     listening2 = true;
