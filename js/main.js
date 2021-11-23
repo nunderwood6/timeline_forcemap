@@ -22,6 +22,9 @@ var zoomBox;
 var renderedBox;
 var zoomFactor;
 var yearlyTotals;
+var bars;
+var overallTimePercent;
+var timeIndicator;
 
 
 function loadData(){
@@ -296,8 +299,6 @@ function addLabels(){
 
 function renderMassacreChart(){
 
-  console.log("Rendering massacre chart");
-  var data = yearlyTotals;
   var labelColumn = "year";
   var valueColumn = "massacres";
 
@@ -305,7 +306,7 @@ function renderMassacreChart(){
   // var aspectHeight = isMobile.matches ? 3 : 9;
 
   var margins = {
-    top: 10,
+    top: 20,
     right: 20,
     bottom: 20,
     left: 30
@@ -318,14 +319,14 @@ function renderMassacreChart(){
   var container = document.querySelector("div.chart");
 
   var chartWidth = container.offsetWidth - margins.left - margins.right;
-  var chartHeight = 100;
+  var chartHeight = 60;
     // Math.ceil((container.offsetWidth * aspectHeight) / aspectWidth) -
     // margins.top -
     // margins.bottom;
 
   //clear for redraw
   var containerElement = d3.select(container);
-  containerElement.html("");
+  containerElement.select("svg").remove();
 
   var chartElement = containerElement
     .append("svg")
@@ -338,9 +339,9 @@ function renderMassacreChart(){
     .range([0, chartWidth])
     .round(true)
     .padding(0.1)
-    .domain(data.map(d => d[labelColumn]));
+    .domain(yearlyTotals.map(d => d[labelColumn]));
 
-    var floors = data.map(
+    var floors = yearlyTotals.map(
       d => Math.floor(d[valueColumn] / roundTicksFactor) * roundTicksFactor
     );
 
@@ -350,7 +351,7 @@ function renderMassacreChart(){
       min = 0;
     }
 
-    var ceilings = data.map(
+    var ceilings = yearlyTotals.map(
       d => Math.ceil(d[valueColumn] / roundTicksFactor) * roundTicksFactor
     );
 
@@ -370,7 +371,7 @@ function renderMassacreChart(){
     var yAxis = d3
       .axisLeft()
       .scale(yScale)
-      .tickValues([1,10,100,500])
+      .tickValues([10,100,500])
       .tickFormat(function (d) {
             return fmtComma(d);
       })
@@ -403,14 +404,13 @@ function renderMassacreChart(){
             .tickFormat("")
         );
 
-        console.log(data[0][valueColumn]);
 
       // Render bars to chart.
-      chartElement
+      bars = chartElement
         .append("g")
         .attr("class", "bars")
         .selectAll("rect")
-        .data(data)
+        .data(yearlyTotals)
         .enter()
         .append("rect")
         .attr("x", d => xScale(d[labelColumn]))
@@ -422,8 +422,27 @@ function renderMassacreChart(){
             : yScale(0.7) - yScale(d[valueColumn])
         )
         .attr("class", function(d) {
-          return "bar bar-" + d[labelColumn];
+          return "bar"+d[labelColumn];
         });
+
+
+          // add time indicator.
+        timeIndicator = chartElement
+            .append("path")
+                .attr("d", function(d){
+                  return `M ${xScale(1965)} ${yScale(0.6)}H ${xScale(1995)+xScale.bandwidth()}`
+                })
+                .attr("stroke", "#fff")
+                .attr("stroke-width", 2)
+                .attr("fill", "none")
+                .attr("stroke-dasharray", function(d){
+                  console.log(d3.select(this).node().getTotalLength());
+                  return d3.select(this).node().getTotalLength();
+                })
+                .attr("stroke-dashoffset", function(d){
+                  console.log(d3.select(this).node().getTotalLength());
+                  return d3.select(this).node().getTotalLength();
+                });
 
 }
 
@@ -434,7 +453,7 @@ function drawMassacres(){
                   .domain([0,400])
                   .range([0, focusWidth/55]);
 
-    var startTime = "1960_0";
+    var startTime = "1965_0";
     var currentData = massacresSpread.municipios.filter(m => m.mama[startTime]);
 
 
@@ -626,10 +645,12 @@ var updateChart = {
 //////////////////Code for Continuous Animations///////////////////////////////
 //////////////////////////////////////////////////////////////////////
 
-var timeDomain = [new Date(1960,0,1), new Date(1969,11,31)];
+var timeDomain = [new Date(1965,0,1), new Date(1969,11,31)];
 var timeDomain2 = [new Date(1970,0,1), new Date(1979,11,31)];
-var timeDomain3 = [new Date(1980,0,1), new Date(1982,11,31)];
-var timeDomain4 = [new Date(1983,0,1), new Date(1996,11,31)];
+var timeDomain3 = [new Date(1980,0,1), new Date(1995,11,31)];
+var timeDomain4 = [new Date(1983,0,1), new Date(1995,11,31)];
+var overallTimeDomain = [new Date(1965,0,1), new Date(1995,11,31)];
+
 
 var timeScale = d3.scaleLinear()
                     .domain(timeDomain)
@@ -641,6 +662,10 @@ var timeScale2 = d3.scaleLinear()
 
 var timeScale3 = d3.scaleLinear()
                     .domain(timeDomain3)
+                    .range([0,1]);
+
+var timeScaleOverall = d3.scaleLinear()
+                    .domain(overallTimeDomain)
                     .range([0,1]);
 
 
@@ -658,8 +683,37 @@ function fmtMonthYearNum(time){
   return year + "_" + month;
 }
 
-var currentDisplayTime = 1960;
+var currentDisplayTime = 1965;
 var yearElement = d3.select("p.year");
+
+
+
+function updateTime(){
+
+  yearElement.text(currentDisplayTime);
+
+  //update bars
+  bars.attr("fill", function(d){
+    var barYear = Number(d3.select(this).attr("class").substring(3));
+    var currentYear = Number(currentDisplayTime.substring(currentDisplayTime.length - 4));
+    if(barYear<currentYear){
+      return "#ccc";
+    } else if(barYear==currentYear){
+      return "#fff";
+    } else {
+      return "#000";
+    }
+    });
+
+
+    console.log(overallTimePercent);
+    //update line
+    timeIndicator.attr("stroke-dashoffset", function(d){
+      var length = d3.select(this).node().getTotalLength();
+      console.log(length*(1-overallTimePercent));
+      return length*(1-overallTimePercent);
+    });
+}
 
 //////////////////////////////////////////////////////////////////////
 //////////////////1)Smooth Animations, with RAF///////////////////////////////
@@ -704,12 +758,14 @@ function update(){
   var newTime = timeScale.invert(percent);
   var newDisplayTime = fmtMonthYear(newTime);
   var timePeriod = fmtMonthYearNum(newTime);
+  overallTimePercent = timeScaleOverall(newTime);
 
 
   if(newDisplayTime != currentDisplayTime){
     //update year text
-    currentDisplayTime = newDisplayTime
-    // yearElement.text(currentDisplayTime);
+    currentDisplayTime = newDisplayTime;
+    updateTime();
+
     //update massacres
     var currentData = massacresSpread.municipios.filter(m => m.mama[timePeriod]);
     updateMassacres(currentData,timePeriod);
@@ -767,12 +823,13 @@ function update2(){
 
   var newDisplayTime = fmtMonthYear(newTime);
   var timePeriod = fmtMonthYearNum(newTime);
+  overallTimePercent = timeScaleOverall(newTime);
 
 
   if(newDisplayTime != currentDisplayTime){
     //update year text
     currentDisplayTime = newDisplayTime
-    // yearElement.text(currentDisplayTime);
+    updateTime();
     //update massacres
     var currentData = massacresSpread.municipios.filter(m => m.mama[timePeriod]);
     updateMassacres(currentData,timePeriod);
@@ -830,12 +887,13 @@ function update3(){
 
   var newDisplayTime = fmtMonthYear(newTime);
   var timePeriod = fmtMonthYearNum(newTime);
+  overallTimePercent = timeScaleOverall(newTime);
 
 
   if(newDisplayTime != currentDisplayTime){
     //update year text
     currentDisplayTime = newDisplayTime
-    // yearElement.text(currentDisplayTime);
+    updateTime();
     //update massacres
     var currentData = massacresSpread.municipios.filter(m => m.mama[timePeriod]);
     updateMassacres(currentData,timePeriod);
