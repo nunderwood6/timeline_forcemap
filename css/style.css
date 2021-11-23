@@ -136,6 +136,26 @@ div#map{
 	max-width: 95.68vh;
 }
 
+div.chart-outer {
+	position: absolute;
+	width: 100%;
+	height: 130px;
+	left: 0px;
+	bottom: 0px;
+}
+
+div.chart {
+	width: 100%;
+	height: 100%;
+	background-color: rgba(25,25,25,0.95);
+	max-width: 500px;
+	margin: 0px auto;
+	position: relative;
+	display: none;
+}
+
+
+
 /*@media (min-aspect-ratio: 600/621) {
   div#map {
   	width: 95.68vh;
@@ -225,6 +245,27 @@ div.labels p.waterLabel {
 	opacity: 0.2;
 	stroke-opacity: 0.4;
 
+}
+
+/*Chart*/
+
+.axis path,.axis line{
+	stroke: #777;
+	stroke-width: 0.25px;
+}
+
+.grid line {
+	stroke: #777;
+	stroke-width: 0.25px;
+}
+
+.axis.y path.domain,.axis.y line, .grid.y path.domain {
+	stroke: none;
+}
+
+.axis text {
+	fill: #777;
+	/*font-weight: bold;*/
 }
 
 

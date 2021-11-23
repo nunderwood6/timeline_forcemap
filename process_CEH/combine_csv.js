@@ -52,9 +52,30 @@ function addIlustrativos(){
 	})
 	.on("end", () => {
 		console.log("There were " + combined_massacres.length + " massacres after those without dates were excluded.");
+		calculateAnnualTotals(combined_massacres);
 		structureMassacres(combined_massacres)
 	});
 
+}
+
+function calculateAnnualTotals(combined){
+	var yearlyTotals = [];
+
+	console.log(combined);
+	//calculate for each year
+	for(var y = 1960; y <= 1996; y++){
+		var yearlyTotal = 0;
+		//loop through massacres
+		for(var massacre of combined){
+			//add total for years that match
+			// if(massacre.year == y) yearlyTotal+=Number(massacre.total_killed);
+			if(massacre.year == y) yearlyTotal+=1;
+		}
+		yearlyTotals.push({"year": y,
+							"massacres": yearlyTotal});
+	}
+	console.log(yearlyTotals);
+	fs.writeFileSync("output/yearly_totals.json", JSON.stringify(yearlyTotals));
 }
 
 //add massacre data to municipio data
@@ -90,10 +111,10 @@ function structureMassacres(massacres){
 	writeFile(municipios);
 }
 
-
 function writeFile(data){
 	fs.writeFileSync("output/massacres_nested.geojson", JSON.stringify(data));
 }
+
 
 var daysInMonth = [31,28,31,30,31,30,31,31,30,31,30,31]
 

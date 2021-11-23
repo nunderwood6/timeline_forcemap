@@ -21,6 +21,7 @@ var marginAmount = 5;
 var zoomBox;
 var renderedBox;
 var zoomFactor;
+var yearlyTotals;
 
 // const zoom = d3.zoom()
 //       .scaleExtent([1, 8])
@@ -41,9 +42,10 @@ function loadData(){
       d3.json("data/countries_topo.json"),
       d3.json("data/circle_positions.json"),
       d3.json("data/home_points.geojson"),
-      d3.json("data/departamentos_topo.json")
+      d3.json("data/departamentos_topo.json"),
+      d3.json("data/yearly_totals.json")
     ])
-    .then(function([municipiosTOPO,focusAreaJSON,rasterAreaJSON,countriesTOPO,circlePositionsJSON,homesJSON,departamentosTOPO]){
+    .then(function([municipiosTOPO,focusAreaJSON,rasterAreaJSON,countriesTOPO,circlePositionsJSON,homesJSON,departamentosTOPO,yearlyTotalsJSON]){
 
         var municipios = topojson.feature(municipiosTOPO, municipiosTOPO.objects.municipios).features;
         var departamentos = topojson.feature(departamentosTOPO,departamentosTOPO.objects.departamentos).features;
@@ -52,14 +54,15 @@ function loadData(){
         var countries = topojson.feature(countriesTOPO, countriesTOPO.objects.countries).features;
         var homes = homesJSON.features;
         massacresSpread = circlePositionsJSON;
+        yearlyTotals = yearlyTotalsJSON;
 
         positionMap(municipios,focusBox,rasterBox,countries);
-        drawMunicipios(municipios,departamentos);
+        // drawMunicipios(municipios,departamentos);
         drawHomes(homes);
         drawMassacres();
         addDiscreteListeners();
         addLabels();
-
+        // renderMassacreChart();
 
     });
 }
@@ -142,7 +145,12 @@ function positionMap(municipios,focusBox,rasterBox,countries){
             .attr("height", rasterHeight + "px");
 
     //add event listener for resize
-    d3.select(window).on('resize', calculateZoomFactor);
+    d3.select(window).on('resize', resized);
+
+    function resized(){
+      calculateZoomFactor();
+      // debounce(renderMassacreChart());
+    }
 
 }
 
@@ -296,6 +304,139 @@ function addLabels(){
 
 }
 
+function renderMassacreChart(){
+
+  console.log("Rendering massacre chart");
+  var data = yearlyTotals;
+  var labelColumn = "year";
+  var valueColumn = "massacres";
+
+  // var aspectWidth = isMobile.matches ? 4 : 16;
+  // var aspectHeight = isMobile.matches ? 3 : 9;
+
+  var margins = {
+    top: 10,
+    right: 20,
+    bottom: 20,
+    left: 30
+  };
+
+  var ticksY = 4;
+  var ticksX = 5;
+  var roundTicksFactor = 500;
+
+  var container = document.querySelector("div.chart");
+
+  var chartWidth = container.offsetWidth - margins.left - margins.right;
+  var chartHeight = 100;
+    // Math.ceil((container.offsetWidth * aspectHeight) / aspectWidth) -
+    // margins.top -
+    // margins.bottom;
+
+  //clear for redraw
+  var containerElement = d3.select(container);
+  containerElement.html("");
+
+  var chartElement = containerElement
+    .append("svg")
+    .attr("width", chartWidth + margins.left + margins.right)
+    .attr("height", chartHeight + margins.top + margins.bottom)
+    .append("g")
+    .attr("transform", `translate(${margins.left},${margins.top})`);
+
+  var xScale = d3.scaleBand()
+    .range([0, chartWidth])
+    .round(true)
+    .padding(0.1)
+    .domain(data.map(d => d[labelColumn]));
+
+    var floors = data.map(
+      d => Math.floor(d[valueColumn] / roundTicksFactor) * roundTicksFactor
+    );
+
+    var min = Math.min(...floors);
+
+    if (min > 0) {
+      min = 0;
+    }
+
+    var ceilings = data.map(
+      d => Math.ceil(d[valueColumn] / roundTicksFactor) * roundTicksFactor
+    );
+
+    var max = Math.max(...ceilings);
+
+    var yScale = d3
+      .scaleLog()
+      .domain([0.7, 500])
+      .range([chartHeight, 0]);
+
+    // Create D3 axes.
+    var xAxis = d3
+      .axisBottom()
+      .scale(xScale)
+      .tickValues([1965,1970,1975,1980,1985,1990,1995]);
+
+    var yAxis = d3
+      .axisLeft()
+      .scale(yScale)
+      .tickValues([1,10,100,500])
+      .tickFormat(function (d) {
+            return fmtComma(d);
+      })
+
+    // Render axes to chart.
+    chartElement
+      .append("g")
+      .attr("class", "x axis")
+      .attr("aria-hidden", "true")
+      .attr("transform", makeTranslate(0, chartHeight))
+      .call(xAxis);
+
+    chartElement
+      .append("g")
+      .attr("class", "y axis")
+      .attr("aria-hidden", "true")
+      .call(yAxis);
+
+      //y axis grid
+      var yAxisGrid = function() {
+        return yAxis;
+      };
+
+      chartElement
+        .append("g")
+        .attr("class", "y grid")
+        .call(
+          yAxisGrid()
+            .tickSize(-chartWidth, 0, 0)
+            .tickFormat("")
+        );
+
+        console.log(data[0][valueColumn]);
+
+      // Render bars to chart.
+      chartElement
+        .append("g")
+        .attr("class", "bars")
+        .selectAll("rect")
+        .data(data)
+        .enter()
+        .append("rect")
+        .attr("x", d => xScale(d[labelColumn]))
+        .attr("y", d => (d[valueColumn] <= 0 ? yScale(0.7) : yScale(d[valueColumn])))
+        .attr("width", xScale.bandwidth())
+        .attr("height", d =>
+          d[valueColumn] <= 0
+            ? 0
+            : yScale(0.7) - yScale(d[valueColumn])
+        )
+        .attr("class", function(d) {
+          return "bar bar-" + d[labelColumn];
+        });
+
+}
+
 
 function drawMassacres(){
 
@@ -379,7 +520,6 @@ function updateMassacres(currentData,timePeriod){
 
 
 var calculateZoomFactor = debounce(function (){
-  console.log("calculating")
   var originalBoxWidth = renderedBox.node().getBBox().width;
   var clientBoxWidth = renderedBox.node().getBoundingClientRect().width;
   zoomFactor = originalBoxWidth/clientBoxWidth;
@@ -387,7 +527,6 @@ var calculateZoomFactor = debounce(function (){
 },100);
 
 function resizeLabels(){
-
   svg.selectAll(".label")
         .attr("font-size", function(d){
           return d.textSize*zoomFactor +"px";
@@ -716,6 +855,10 @@ function intersectionCallback3(entries, observer){
   }
 }
 
+
+
+////Helpers/////////////////////
+
 function debounce(func, wait, immediate) {
   var timeout;
   return function() {
@@ -730,5 +873,77 @@ function debounce(func, wait, immediate) {
     if (callNow) func.apply(context, args);
   };
 };
+
+////
+var isMobile = window.matchMedia("(max-width: 500px)"),
+  isTablet = window.matchMedia("(max-width:750px)"),
+  isDesktop = window.matchMedia("(min-width: 501px)");
+
+
+/////
+var wrapText = function (texts, width, lineHeight) {
+
+  var eachText = function(text) {
+    // work with arrays as well
+    var words = text.textContent.split(/\s+/).reverse();
+
+    var word = null;
+    var line = [];
+    var lineNumber = 0;
+
+    var x = text.getAttribute("x") || 0;
+    var y = text.getAttribute("y") || 0;
+
+    var dx = parseFloat(text.getAttribute("dx")) || 0;
+    var dy = parseFloat(text.getAttribute("dy")) || 0;
+
+    text.textContent = "";
+
+    var NS = "http://www.w3.org/2000/svg";
+    var tspan = document.createElementNS(NS, "tspan");
+    text.appendChild(tspan);
+
+    var attrs = { x, y, dx: dx + "px", dy: dy + "px" };
+    for (var k in attrs) {
+      tspan.setAttribute(k, attrs[k]);
+    }
+
+    while (word = words.pop()) {
+      line.push(word);
+      tspan.textContent = line.join(" ");
+
+      if (tspan.getComputedTextLength() > width) {
+        line.pop();
+        tspan.textContent = line.join(" ");
+        line = [word];
+
+        lineNumber += 1;
+
+        tspan = document.createElementNS(NS, "tspan");
+        text.appendChild(tspan);
+
+        var attrs = { x, y, dx: dx + "px", dy: (lineNumber * lineHeight) + dy + "px" };
+        for (var k in attrs) {
+          tspan.setAttribute(k, attrs[k]);
+        }
+        tspan.textContent = word;
+      }
+    }
+  };
+
+  // convert D3 to array
+  if ("each" in texts) {
+    // call D3-style
+    texts = texts.nodes();
+  } 
+  texts.forEach(eachText);
+};
+
+var makeTranslate = (x, y) => `translate(${x}, ${y})`;
+
+var fmtComma = s => s.toLocaleString().replace(/\.0+$/, "");
+
+
+
 
 loadData();
