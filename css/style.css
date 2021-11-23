@@ -101,7 +101,7 @@ div.spacer {
 
 .step {
 	margin: 0px auto;
-	background-color: rgba(0,0,0,0.9);
+	background-color: rgba(0,0,0,1);
 	border-radius: 5px;
 	max-width: 600px;
 	padding: 8px;
@@ -151,7 +151,6 @@ div.chart {
 	max-width: 500px;
 	margin: 0px auto;
 	position: relative;
-	display: none;
 }
 
 

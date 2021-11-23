@@ -23,16 +23,6 @@ var renderedBox;
 var zoomFactor;
 var yearlyTotals;
 
-// const zoom = d3.zoom()
-//       .scaleExtent([1, 8])
-//       .on("zoom", zoomed);
-
-
-// function zoomed() {
-//     svgInner.attr("transform", d3.event.transform);
-//     svgInner.attr("stroke-width", 1 / d3.event.transform.k);
-//   }
-
 
 function loadData(){
     Promise.all([
@@ -62,7 +52,7 @@ function loadData(){
         drawMassacres();
         addDiscreteListeners();
         addLabels();
-        // renderMassacreChart();
+        renderMassacreChart();
 
     });
 }
@@ -149,7 +139,7 @@ function positionMap(municipios,focusBox,rasterBox,countries){
 
     function resized(){
       calculateZoomFactor();
-      // debounce(renderMassacreChart());
+      debounce(renderMassacreChart());
     }
 
 }
@@ -593,13 +583,19 @@ var updateChart = {
 
   },
   zoomOutFull: function(){
-    svg.transition("Zoom out full!").duration(1500).attr("viewBox", `0 0 ${w} ${h}`)
-                .on("end", function(){
-                    calculateZoomFactor();
-                });
+
     svg.selectAll(".eastLabel,.Wilmer,.Juan").transition("fade out east labels")
-                               .duration(500)
-                               .attr("opacity", 0);
+                     .duration(500)
+                     .attr("opacity", 0)
+                     .on("end", function(){
+                        svg.transition("Zoom out full!").duration(1500).attr("viewBox", `0 0 ${w} ${h}`)
+                                    .on("end", function(){
+                                        calculateZoomFactor();
+                     })
+
+                    
+                });
+    
   },
   zoomToPanzos: function(){
 
@@ -607,15 +603,22 @@ var updateChart = {
       h2 = 0.36*h,
       left = 0.38*w,
       top= 0.35*h;
-      //zoom to new location
-      svg.transition("Zoom panzos").duration(1500).attr("viewBox", `${left} ${top} ${w2} ${h2}`)
-                .on("end", function(){
-                    calculateZoomFactor();
-                });
+
       //zoom out old labels
       svg.selectAll(".eastLabel,.Wilmer,.Juan").transition("fade out east labels")
-                                 .duration(500)
-                                 .attr("opacity", 0);
+               .duration(500)
+               .attr("opacity", 0)
+               .on("end", function(){
+                  //zoom to new location
+                  svg.transition("Zoom panzos").duration(1500).attr("viewBox", `${left} ${top} ${w2} ${h2}`)
+                            .on("end", function(){
+                                calculateZoomFactor();
+
+                            });
+
+                })
+
+
   }
 }
 
@@ -706,7 +709,7 @@ function update(){
   if(newDisplayTime != currentDisplayTime){
     //update year text
     currentDisplayTime = newDisplayTime
-    yearElement.text(currentDisplayTime);
+    // yearElement.text(currentDisplayTime);
     //update massacres
     var currentData = massacresSpread.municipios.filter(m => m.mama[timePeriod]);
     updateMassacres(currentData,timePeriod);
@@ -769,7 +772,7 @@ function update2(){
   if(newDisplayTime != currentDisplayTime){
     //update year text
     currentDisplayTime = newDisplayTime
-    yearElement.text(currentDisplayTime);
+    // yearElement.text(currentDisplayTime);
     //update massacres
     var currentData = massacresSpread.municipios.filter(m => m.mama[timePeriod]);
     updateMassacres(currentData,timePeriod);
@@ -832,7 +835,7 @@ function update3(){
   if(newDisplayTime != currentDisplayTime){
     //update year text
     currentDisplayTime = newDisplayTime
-    yearElement.text(currentDisplayTime);
+    // yearElement.text(currentDisplayTime);
     //update massacres
     var currentData = massacresSpread.municipios.filter(m => m.mama[timePeriod]);
     updateMassacres(currentData,timePeriod);
