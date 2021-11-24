@@ -25,6 +25,7 @@ var yearlyTotals;
 var bars;
 var overallTimePercent;
 var timeIndicator;
+var animationIndex = 0;
 
 
 function loadData(){
@@ -54,7 +55,7 @@ function loadData(){
         drawHomes(homes);
         drawMassacres();
         addDiscreteListeners();
-        addLabels();
+        // addLabels();
         renderMassacreChart();
 
     });
@@ -261,22 +262,24 @@ function addLabels(){
               .attr("class", "east");
 
     var eastLabels = [
-      {"text": "Lago de Izabal",
-        "x": ".76",
-        "y": ".57",
-        "textSize": 11,
-        "font-style": "italic",
-        "fill": "#aaa",
-      },
-      {"text": "Ch'orti'   Territory",
+      // {"text": "Lago de Izabal",
+      //   "x": ".76",
+      //   "y": ".57",
+      //   "textSize": 11,
+      //   "font-style": "italic",
+      //   "fill": "#aaa",
+      // },
+      {"text": "Ch'orti' Territory",
         "x": ".72",
         "y": ".735",
-        "textSize": 14,
+        "textSize": {mobile:14,
+                    desktop:16},
         "fill": "#fffee0",
         "letter-spacing": "2.5px",
         "font-weight": "bold"
       }
     ];
+
 
     labels.selectAll(".eastLabel")
           .data(eastLabels)
@@ -285,7 +288,10 @@ function addLabels(){
               .attr("class", "label eastLabel")
               .attr("x", d=>d.x*w)
               .attr("y", d=>d.y*h)
-              .attr("font-size", d => d.textSize*zoomFactor +"px")
+              .attr("font-size", function(d){
+                  if(isMobile.matches) return d.textSize.mobile*zoomFactor +"px";
+                  else return d.textSize.desktop*zoomFactor +"px";
+              })
               .attr("font-style", d=> d["font-style"] ? d["font-style"] : "normal")
               .attr("fill", d => d.fill)
               .attr("text-anchor", "middle")
@@ -293,9 +299,20 @@ function addLabels(){
               .attr("font-weight", d=> d["font-weight"] ? d["font-weight"] : "normal")
               .attr("opacity", 0)
               .attr("text-shadow", "2px 2px 1px black;")
+              .attr("style","white-space:pre")
               .text(d=>d["text"]);
 
 }
+
+// function addMassacreLabels(){
+//     var labels = [
+//       {"case": "c47",
+//        "date": ""
+//       "text": “Many from here are [still] in Honduras. Almost half of the village left.” —Survivor
+
+//       }
+//     ]
+// }
 
 function renderMassacreChart(){
 
@@ -307,7 +324,7 @@ function renderMassacreChart(){
 
   var margins = {
     top: 20,
-    right: 20,
+    right: 10,
     bottom: 20,
     left: 30
   };
@@ -436,11 +453,9 @@ function renderMassacreChart(){
                 .attr("stroke-width", 2)
                 .attr("fill", "none")
                 .attr("stroke-dasharray", function(d){
-                  console.log(d3.select(this).node().getTotalLength());
                   return d3.select(this).node().getTotalLength();
                 })
                 .attr("stroke-dashoffset", function(d){
-                  console.log(d3.select(this).node().getTotalLength());
                   return d3.select(this).node().getTotalLength();
                 });
 
@@ -460,7 +475,7 @@ function drawMassacres(){
     // viewBox from "calculateCirclePositions" was 0 0 678.359 709
     //need to adjust values to account for the old viewbox
     //cant set directly through viewbox since we will animate for zooming
-    scaleFactor = h/709;
+    scaleFactor = h/653;
 
     var massacreGroup = svg.append("g");
 
@@ -509,19 +524,18 @@ function updateMassacres(currentData,timePeriod){
 
   var massacreCircles = circleGroups.selectAll(".innerChildren")
                       .data(d=> d.mama[timePeriod].children, d=> d.caso ? d.caso : ("c"+ d.caso_ilustrativo))
-                      .join(enter=> enter.append("circle")
-                                         .attr("class", "innerChildren")
-                                         .attr("caso", d=> d.caso ? ("c"+ d.caso) : ("c"+ d.caso_ilustrativo))
-                                         .attr("cx", d=>d.x*scaleFactor)
-                                         .attr("cy", d=>d.y*scaleFactor)
-                                         .attr("r", d=>(d.r-0.1)*scaleFactor)
-                                         .attr("fill-opacity", 0.9)
-                                         .attr("fill", "#fff")
-                                         .attr("stroke", "#555")
-                                         .attr("stroke-width", 0.1),
-                            update=> update.attr("cx", d=>d.x*scaleFactor)
-                                           .attr("cy", d=>d.y*scaleFactor), 
-                            exit => exit.remove());
+                         .join(enter => enter.append("g")
+                              .attr("class", "innerChildren")
+                              .attr("caso", d=> d.caso ? ("c"+ d.caso) : ("c"+ d.caso_ilustrativo))
+                              .attr("transform", d => makeTranslate(d.x*scaleFactor,d.y*scaleFactor))
+                                   .append("circle")
+                                   .attr("r", d=>(d.r-0.1)*scaleFactor)
+                                   .attr("fill-opacity", 0.9)
+                                   .attr("fill", "#fff")
+                                   .attr("stroke", "#555")
+                                   .attr("stroke-width", 0.1),
+                          update => update.attr("transform", d => makeTranslate(d.x*scaleFactor,d.y*scaleFactor)),
+                          exit => exit.remove());
 
 
 }
@@ -538,7 +552,8 @@ var calculateZoomFactor = debounce(function (){
 function resizeLabels(){
   svg.selectAll(".label")
         .attr("font-size", function(d){
-          return d.textSize*zoomFactor +"px";
+                  if(isMobile.matches) return d.textSize.mobile*zoomFactor +"px";
+                  else return d.textSize.desktop*zoomFactor +"px";
         });
 }
 
@@ -570,7 +585,24 @@ function resizeLabels(){
 //////discrete animations
 
 var updateChart = {
+  zoomOutFull: function(){
+    animationIndex = 0;
+    svg.selectAll(".eastLabel,.Wilmer,.Juan").transition("fade out east labels backward")
+                     .duration(500)
+                     .attr("opacity", 0)
+                     .on("end", function(){
+                        if(animationIndex == 0){
+
+                          svg.transition("Zoom out full!").duration(1500).attr("viewBox", `0 0 ${w} ${h}`)
+                                      .on("end", function(){
+                                          calculateZoomFactor();
+                                      })
+                        }
+                      });
+    
+  },
   zoomToEast: function(){    
+    animationIndex = 1;
 
     var w2 = .30*w,
     h2 = 0.36*h,
@@ -590,51 +622,38 @@ var updateChart = {
             .on("end", function(){
               //resized, need to calculate zoom
               calculateZoomFactor();
-              //fade in east labels
-              svg.selectAll(".eastLabel,.Wilmer,.Juan").transition("fade in east labels")
-                                         .duration(500)
-                                         .attr("opacity", 1);
-              // //highlight camotan
-              // svg.select("#m2005").classed("highlight", true);
+              //check if still at current step before fading in east labels
+              if(animationIndex == 1){
 
+                //fade in east labels
+                svg.selectAll(".eastLabel,.Wilmer,.Juan").transition("fade in east labels")
+                                           .duration(500)
+                                           .attr("opacity", 1);
+              }
             });
 
-
-  },
-  zoomOutFull: function(){
-
-    svg.selectAll(".eastLabel,.Wilmer,.Juan").transition("fade out east labels")
-                     .duration(500)
-                     .attr("opacity", 0)
-                     .on("end", function(){
-                        svg.transition("Zoom out full!").duration(1500).attr("viewBox", `0 0 ${w} ${h}`)
-                                    .on("end", function(){
-                                        calculateZoomFactor();
-                     })
-
-                    
-                });
-    
   },
   zoomToPanzos: function(){
-
+      animationIndex = 2;
       var w2 = .40*w,
       h2 = 0.36*h,
       left = 0.38*w,
       top= 0.35*h;
 
       //zoom out old labels
-      svg.selectAll(".eastLabel,.Wilmer,.Juan").transition("fade out east labels")
+      svg.selectAll(".eastLabel,.Wilmer,.Juan").transition("fade out east labels forward")
                .duration(500)
                .attr("opacity", 0)
                .on("end", function(){
-                  //zoom to new location
-                  svg.transition("Zoom panzos").duration(1500).attr("viewBox", `${left} ${top} ${w2} ${h2}`)
-                            .on("end", function(){
-                                calculateZoomFactor();
+                  if(animationIndex = 2){
+                      //zoom to new location
+                      svg.transition("Zoom panzos").duration(1500).attr("viewBox", `${left} ${top} ${w2} ${h2}`)
+                                .on("end", function(){
+                                    calculateZoomFactor();
 
-                            });
-
+                                });
+                  }
+  
                 })
 
 
@@ -706,11 +725,9 @@ function updateTime(){
     });
 
 
-    console.log(overallTimePercent);
     //update line
     timeIndicator.attr("stroke-dashoffset", function(d){
       var length = d3.select(this).node().getTotalLength();
-      console.log(length*(1-overallTimePercent));
       return length*(1-overallTimePercent);
     });
 }

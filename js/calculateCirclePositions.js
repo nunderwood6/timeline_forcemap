@@ -192,7 +192,7 @@ function calculateCirclePositions(massacres_nested){
 
    function calculateSpreads(y,m){
 
-      var nodePadding = 0.05;
+      var nodePadding = 0.01;
       const simulation = d3.forceSimulation(filtered)
       // .force("cx", d3.forceX().x(d => w / 2).strength(0.005))
       // .force("cy", d3.forceY().y(d => h / 2).strength(0.005))

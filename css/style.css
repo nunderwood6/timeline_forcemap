@@ -62,13 +62,12 @@ div.introText, div.closingText {
 }
 
 p {
-	font-size: 18px;
+	font-size: 16px;
 	padding: 0 5px;
 	margin: 0 auto;
 	max-width: 625px;
 	z-index: 5;
 	position: relative;
-
 }
 
 .firstCharacter {
@@ -96,7 +95,7 @@ div.sticky {
 }
 
 div.spacer {
-	height: 90vh;
+	height: 100vh;
 }
 
 .step {
