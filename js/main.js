@@ -196,7 +196,7 @@ function drawHomes(homes){
                             .attr("height", symbolSize)
                             .attr("fill", "#fff")
                             .attr("stroke", "#000")
-                            .attr("stroke-width", 0.5);
+                            .attr("stroke-width", 0.25);
 
     //home labels
     var homeLabels = svgInner.append("g")
@@ -304,15 +304,6 @@ function addLabels(){
 
 }
 
-// function addMassacreLabels(){
-//     var labels = [
-//       {"case": "c47",
-//        "date": ""
-//       "text": “Many from here are [still] in Honduras. Almost half of the village left.” —Survivor
-
-//       }
-//     ]
-// }
 
 function renderMassacreChart(){
 
@@ -525,8 +516,7 @@ function updateMassacres(currentData,timePeriod){
   var massacreCircles = circleGroups.selectAll(".innerChildren")
                       .data(d=> d.mama[timePeriod].children, d=> d.caso ? d.caso : ("c"+ d.caso_ilustrativo))
                          .join(enter => enter.append("g")
-                              .attr("class", "innerChildren")
-                              .attr("caso", d=> d.caso ? ("c"+ d.caso) : ("c"+ d.caso_ilustrativo))
+                              .attr("class", d=> d.caso ? ("innerChildren c"+ d.caso) : ("innerChildren c"+ d.caso_ilustrativo))
                               .attr("transform", d => makeTranslate(d.x*scaleFactor,d.y*scaleFactor))
                                    .append("circle")
                                    .attr("r", d=>(d.r-0.1)*scaleFactor)
@@ -555,6 +545,16 @@ function resizeLabels(){
                   if(isMobile.matches) return d.textSize.mobile*zoomFactor +"px";
                   else return d.textSize.desktop*zoomFactor +"px";
         });
+
+  // svg.selectAll("text.label.wrapped")
+  //       .text(d=>d["text"])
+  //       .each(function(d){
+  //             console.log(d["text"]);
+  //             var fontSize = isMobile.matches ? d.textSize.mobile*zoomFactor : d.textSize.desktop*zoomFactor;
+  //             d3.select(this).call(wrapText,d["width"], fontSize);
+  //       });
+
+          
 }
 
 
@@ -633,8 +633,128 @@ var updateChart = {
             });
 
   },
+  cajonDelRio: function(){
+    animationIndex = 2;
+
+    var labels = [
+      {"case": "c47",
+       "date": "February 7, 1967",
+       "name": "Cajón del Río Massacre",
+       "x": 0,
+       "y": 0,
+       "textSize": {mobile:11,desktop:12},
+       "width": 52,
+       "xAlign": "right",
+       "yAlign": "top",
+       "text": "“Many from here are [still] in Honduras. Almost half of the village left.” —Survivor"
+      },
+      {"case": "c1004",
+       "x": 0,
+       "y": 0,
+       "textSize": {mobile:11,desktop:12},
+       "width": 60,
+       "xAlign": "left",
+       "yAlign": "bottom",
+       "text": "The soldiers doused them with gasoline and began to throw paper balls at them with fire. The victims were burned alive. —CEH"
+      }
+    ];
+
+
+    // append labels to the massacre circle groups
+    for(var label of labels){
+        
+        var labelG = d3.select(`g.${label.case}`);
+        var circleBbox = labelG.select("circle").node().getBBox();
+        console.log(circleBbox);
+
+        var textG = labelG.append("g").attr("opacity", 0).datum(label);
+        var textRect = textG.append("rect");
+
+        //calculate text dimensions
+        var textElement = textG.append("text")
+          .attr("class", "label wrapped")
+          .datum(label)
+          .attr("fill", "#fff")
+          .style("font-family", "Lora")
+          .style("font-weight", "bold")
+          .attr("font-size", function(d){
+                if(isMobile.matches) return d.textSize.mobile*zoomFactor +"px";
+                else return d.textSize.desktop*zoomFactor +"px";
+          })
+          // .attr("dominant-baseline", d=> (d.yAlign == "top") ? "auto" : "hanging")
+          .attr("dominant-baseline", "hanging")
+          .text(label["text"])
+
+        textElement.call(wrapText, label["width"], 12*zoomFactor);
+
+        var textBbox = textG.node().getBBox();
+        var textW = textBbox["width"];
+        var textH = textBbox["height"];
+
+        //set x and y depending on where we want the text anchored
+        textG.attr("transform", function(d){
+            var x,
+            y;
+            
+            if(d.xAlign == "right"){
+                x = circleBbox["width"]/2 + d.x;
+            } else {
+                x = d.x - circleBbox["width"]/2 - textW;
+            }
+            if(d.yAlign == "top"){
+                y = circleBbox["height"]/2 + d.y;
+            } else {
+                y = d.y - circleBbox["height"]/2 - textH;
+            }
+            return makeTranslate(x,y);
+        });
+
+        //add text rect
+        textRect.attr("x", 0)
+                .attr("y",0)
+                .attr("width", textW)
+                .attr("height", textH)
+                .attr("fill", "#000");
+
+        textG.transition("fade in cajon labels")
+          .duration(500)
+          .attr("opacity", 1);
+
+
+
+        
+    }
+
+
+
+    // labels.selectAll(".eastLabel")
+    //       .data(eastLabels)
+    //       .enter()
+    //       .append("text")
+    //           .attr("class", "label eastLabel")
+    //           .attr("x", d=>d.x*w)
+    //           .attr("y", d=>d.y*h)
+    //           .attr("font-size", function(d){
+    //               if(isMobile.matches) return d.textSize.mobile*zoomFactor +"px";
+    //               else return d.textSize.desktop*zoomFactor +"px";
+    //           })
+    //           .attr("font-style", d=> d["font-style"] ? d["font-style"] : "normal")
+    //           .attr("fill", d => d.fill)
+    //           .attr("text-anchor", "middle")
+    //           .attr("letter-spacing", d=> d["letter-spacing"] ? d["letter-spacing"] : "normal")
+    //           .attr("font-weight", d=> d["font-weight"] ? d["font-weight"] : "normal")
+    //           .attr("opacity", 0)
+    //           .attr("text-shadow", "2px 2px 1px black;")
+    //           .attr("style","white-space:pre")
+    //           .text(d=>d["text"]);
+
+
+
+
+
+  },
   zoomToPanzos: function(){
-      animationIndex = 2;
+      animationIndex = 3;
       var w2 = .40*w,
       h2 = 0.36*h,
       left = 0.38*w,
@@ -645,7 +765,7 @@ var updateChart = {
                .duration(500)
                .attr("opacity", 0)
                .on("end", function(){
-                  if(animationIndex = 2){
+                  if(animationIndex = 3){
                       //zoom to new location
                       svg.transition("Zoom panzos").duration(1500).attr("viewBox", `${left} ${top} ${w2} ${h2}`)
                                 .on("end", function(){
@@ -1020,7 +1140,6 @@ var wrapText = function (texts, width, lineHeight) {
 var makeTranslate = (x, y) => `translate(${x}, ${y})`;
 
 var fmtComma = s => s.toLocaleString().replace(/\.0+$/, "");
-
 
 
 
