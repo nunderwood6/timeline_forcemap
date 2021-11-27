@@ -55,7 +55,7 @@ function loadData(){
         drawHomes(homes);
         drawMassacres();
         addDiscreteListeners();
-        // addLabels();
+        addLabels();
         renderMassacreChart();
 
     });
@@ -257,19 +257,18 @@ function addLabels(){
 
     var labels = svgInner.append("g").attr("class", "labels");
 
-    //eastern labels
-    var east = labels.append("g")
-              .attr("class", "east");
-
-    var eastLabels = [
-      // {"text": "Lago de Izabal",
-      //   "x": ".76",
-      //   "y": ".57",
-      //   "textSize": 11,
-      //   "font-style": "italic",
-      //   "fill": "#aaa",
-      // },
+    var labelData = [
+      {"text": "Lago de Izabal",
+        "class": "chorti",
+        "x": ".76",
+        "y": ".57",
+        "textSize": {mobile:11,
+                    desktop:12},
+        "font-style": "italic",
+        "fill": "#aaa",
+      },
       {"text": "Ch'orti' Territory",
+        "class": "chorti",
         "x": ".72",
         "y": ".735",
         "textSize": {mobile:14,
@@ -277,15 +276,24 @@ function addLabels(){
         "fill": "#fffee0",
         "letter-spacing": "2.5px",
         "font-weight": "bold"
-      }
+      },
+      {"text": "Q'eqchi' Territory",
+        "class": "qeqchi",
+        "x": ".57",
+        "y": ".535",
+        "textSize": {mobile:14,
+                    desktop:16},
+        "fill": "#fbd6ff",
+        "letter-spacing": "3.5px",
+        "font-weight": "bold"}
     ];
 
 
-    labels.selectAll(".eastLabel")
-          .data(eastLabels)
+    labels.selectAll(".label")
+          .data(labelData)
           .enter()
           .append("text")
-              .attr("class", "label eastLabel")
+              .attr("class", d=> `label ${d["class"]}`)
               .attr("x", d=>d.x*w)
               .attr("y", d=>d.y*h)
               .attr("font-size", function(d){
@@ -306,6 +314,7 @@ function addLabels(){
 
 
 function renderMassacreChart(){
+
 
   var labelColumn = "year";
   var valueColumn = "massacres";
@@ -546,13 +555,11 @@ function resizeLabels(){
                   else return d.textSize.desktop*zoomFactor +"px";
         });
 
-  // svg.selectAll("text.label.wrapped")
-  //       .text(d=>d["text"])
-  //       .each(function(d){
-  //             console.log(d["text"]);
-  //             var fontSize = isMobile.matches ? d.textSize.mobile*zoomFactor : d.textSize.desktop*zoomFactor;
-  //             d3.select(this).call(wrapText,d["width"], fontSize);
-  //       });
+
+  svg.selectAll(".massacreAnnotation")
+        .each(function(d){
+          renderMassacreAnnotation(d3.select(this));
+        });
 
           
 }
@@ -576,7 +583,20 @@ function resizeLabels(){
       },
       exit: el => {
         let index = d3.select(el).attr('backward');
-        updateChart[index]();
+
+        //check for multiple
+        console.log(index.includes(" "));
+        if(!index.includes(" ")){
+           updateChart[index]();
+        } else {
+          var indexes = index.split(" ");
+          for(var i of indexes){
+            updateChart[i]();
+          }
+        }
+
+
+        
       }
     });
  }
@@ -587,7 +607,7 @@ function resizeLabels(){
 var updateChart = {
   zoomOutFull: function(){
     animationIndex = 0;
-    svg.selectAll(".eastLabel,.Wilmer,.Juan").transition("fade out east labels backward")
+    svg.selectAll(".chorti,.Wilmer,.Juan").transition("fade out east labels backward")
                      .duration(500)
                      .attr("opacity", 0)
                      .on("end", function(){
@@ -601,8 +621,9 @@ var updateChart = {
                       });
     
   },
-  zoomToEast: function(){    
+  zoomChorti: function(){    
     animationIndex = 1;
+    console.log("zooming chorti")
 
     var w2 = .30*w,
     h2 = 0.36*h,
@@ -626,7 +647,7 @@ var updateChart = {
               if(animationIndex == 1){
 
                 //fade in east labels
-                svg.selectAll(".eastLabel,.Wilmer,.Juan").transition("fade in east labels")
+                svg.selectAll(".chorti,.Wilmer,.Juan").transition("fade in east labels")
                                            .duration(500)
                                            .attr("opacity", 1);
               }
@@ -636,23 +657,29 @@ var updateChart = {
   cajonDelRio: function(){
     animationIndex = 2;
 
+    //fade out jakelin labels
+    svg.selectAll(".qeqchi,.Jakelin").transition("fade labels out chorti")
+                                           .duration(500)
+                                           .attr("opacity", 0);
+
     var labels = [
       {"case": "c47",
        "date": "February 7, 1967",
        "name": "Cajón del Río Massacre",
-       "x": 0,
-       "y": 0,
+       "x": 2,
+       "y": 2,
        "textSize": {mobile:11,desktop:12},
-       "width": 52,
+       "width": {mobile:45,desktop:70},
        "xAlign": "right",
        "yAlign": "top",
+       "font-style": "italic",
        "text": "“Many from here are [still] in Honduras. Almost half of the village left.” —Survivor"
       },
       {"case": "c1004",
-       "x": 0,
-       "y": 0,
+       "x": -2,
+       "y": -2,
        "textSize": {mobile:11,desktop:12},
-       "width": 60,
+       "width": {mobile:38,desktop:60},
        "xAlign": "left",
        "yAlign": "bottom",
        "text": "The soldiers doused them with gasoline and began to throw paper balls at them with fire. The victims were burned alive. —CEH"
@@ -660,124 +687,125 @@ var updateChart = {
     ];
 
 
-    // append labels to the massacre circle groups
+    // add annotation class and bind data, then pass to rendering function
     for(var label of labels){
+        //bind data
+        var labelG = d3.select(`g.${label.case}`)
+                          .append("g")
+                          .attr("opacity", 0)
+                          .attr("class", "massacreAnnotation chorti")
+                          .datum(label);
+
+        console.log(labelG.empty());
+        if(!labelG.empty()){
+           renderMassacreAnnotation(labelG);
+        }
         
-        var labelG = d3.select(`g.${label.case}`);
-        var circleBbox = labelG.select("circle").node().getBBox();
-        console.log(circleBbox);
 
-        var textG = labelG.append("g").attr("opacity", 0).datum(label);
-        var textRect = textG.append("rect");
-
-        //calculate text dimensions
-        var textElement = textG.append("text")
-          .attr("class", "label wrapped")
-          .datum(label)
-          .attr("fill", "#fff")
-          .style("font-family", "Lora")
-          .style("font-weight", "bold")
-          .attr("font-size", function(d){
-                if(isMobile.matches) return d.textSize.mobile*zoomFactor +"px";
-                else return d.textSize.desktop*zoomFactor +"px";
-          })
-          // .attr("dominant-baseline", d=> (d.yAlign == "top") ? "auto" : "hanging")
-          .attr("dominant-baseline", "hanging")
-          .text(label["text"])
-
-        textElement.call(wrapText, label["width"], 12*zoomFactor);
-
-        var textBbox = textG.node().getBBox();
-        var textW = textBbox["width"];
-        var textH = textBbox["height"];
-
-        //set x and y depending on where we want the text anchored
-        textG.attr("transform", function(d){
-            var x,
-            y;
-            
-            if(d.xAlign == "right"){
-                x = circleBbox["width"]/2 + d.x;
-            } else {
-                x = d.x - circleBbox["width"]/2 - textW;
-            }
-            if(d.yAlign == "top"){
-                y = circleBbox["height"]/2 + d.y;
-            } else {
-                y = d.y - circleBbox["height"]/2 - textH;
-            }
-            return makeTranslate(x,y);
-        });
-
-        //add text rect
-        textRect.attr("x", 0)
-                .attr("y",0)
-                .attr("width", textW)
-                .attr("height", textH)
-                .attr("fill", "#000");
-
-        textG.transition("fade in cajon labels")
+        // after rendering fade in
+        labelG.transition("fade in cajon labels")
           .duration(500)
           .attr("opacity", 1);
-
-
-
-        
     }
 
 
 
-    // labels.selectAll(".eastLabel")
-    //       .data(eastLabels)
-    //       .enter()
-    //       .append("text")
-    //           .attr("class", "label eastLabel")
-    //           .attr("x", d=>d.x*w)
-    //           .attr("y", d=>d.y*h)
-    //           .attr("font-size", function(d){
-    //               if(isMobile.matches) return d.textSize.mobile*zoomFactor +"px";
-    //               else return d.textSize.desktop*zoomFactor +"px";
-    //           })
-    //           .attr("font-style", d=> d["font-style"] ? d["font-style"] : "normal")
-    //           .attr("fill", d => d.fill)
-    //           .attr("text-anchor", "middle")
-    //           .attr("letter-spacing", d=> d["letter-spacing"] ? d["letter-spacing"] : "normal")
-    //           .attr("font-weight", d=> d["font-weight"] ? d["font-weight"] : "normal")
-    //           .attr("opacity", 0)
-    //           .attr("text-shadow", "2px 2px 1px black;")
-    //           .attr("style","white-space:pre")
-    //           .text(d=>d["text"]);
-
-
-
-
-
   },
-  zoomToPanzos: function(){
+  zoomQeqchi: function(){
       animationIndex = 3;
       var w2 = .40*w,
       h2 = 0.36*h,
       left = 0.38*w,
       top= 0.35*h;
 
-      //zoom out old labels
-      svg.selectAll(".eastLabel,.Wilmer,.Juan").transition("fade out east labels forward")
+      //zoom out east labels
+      svg.selectAll(".chorti,.Wilmer,.Juan").transition("fade out labels qeqchi")
                .duration(500)
-               .attr("opacity", 0)
-               .on("end", function(){
-                  if(animationIndex = 3){
-                      //zoom to new location
-                      svg.transition("Zoom panzos").duration(1500).attr("viewBox", `${left} ${top} ${w2} ${h2}`)
-                                .on("end", function(){
-                                    calculateZoomFactor();
-
-                                });
-                  }
+               .attr("opacity", 0);
   
-                })
+      //zoom to new location
+      svg.transition("Zoom panzos").duration(1500).attr("viewBox", `${left} ${top} ${w2} ${h2}`)
+                .on("end", function(){
+                    calculateZoomFactor();
+                    //fade in new labels
+                    if(animationIndex == 3){
+                        svg.selectAll(".Jakelin,.qeqchi").transition("fade in labels qeqchi")
+                                .duration(500)
+                                .attr("opacity", 1);
+                    }
+
+                });
+                  
+  
+         
 
 
   }
+}
+
+function renderMassacreAnnotation(labelG){
+  
+  //clear previous
+  labelG.html("");
+
+  var label = labelG.datum();
+  var parent = d3.select(labelG.node().parentNode);
+
+  var circleBbox = parent.select("circle").node().getBBox();
+
+  //add rectangle underneath text
+  var textRect = labelG.append("rect");
+
+  //calculate text dimensions
+  var textElement = labelG.append("text")
+    .attr("class", "label wrapped")
+    .datum(label)
+    .attr("fill", "#fff")
+    .style("font-family", "Lora")
+    .style("font-weight", "bold")
+    .attr("font-style", d=> d["font-style"] ? d["font-style"] : "normal")
+    .attr("font-size", function(d){
+          if(isMobile.matches) return d.textSize.mobile*zoomFactor +"px";
+          else return d.textSize.desktop*zoomFactor +"px";
+    })
+    .attr("dominant-baseline", "hanging")
+    .text(label["text"])
+
+  var dWidth = isMobile.matches ? label["width"].mobile : label["width"].desktop;
+
+  textElement.call(wrapText, dWidth, 12*zoomFactor);
+
+  var textBbox = labelG.node().getBBox();
+  var textW = textBbox["width"];
+  var textH = textBbox["height"];
+
+  //set x and y depending on where we want the text anchored
+  labelG.attr("transform", function(d){
+      var x,
+      y;
+      
+      if(d.xAlign == "right"){
+          x = circleBbox["width"]/2 + d.x;
+      } else {
+          x = d.x - circleBbox["width"]/2 - textW;
+      }
+      if(d.yAlign == "top"){
+          y = circleBbox["height"]/2 + d.y;
+      } else {
+          y = d.y - circleBbox["height"]/2 - textH;
+      }
+      return makeTranslate(x,y);
+  });
+
+  //add text rect
+  textRect.attr("x", 0)
+          .attr("y",0)
+          .attr("width", textW)
+          .attr("height", textH)
+          .attr("fill", "#000")
+          .attr("stroke", "#000")
+          .attr("stroke-width", 4);
+
 }
 
 //////////////////////////////////////////////////////////////////////
