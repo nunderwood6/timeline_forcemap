@@ -185,18 +185,20 @@ function drawHomes(homes){
     var labelPadding = 0.5;
 
     var homePoints = svgInner.append("g")
-                          .attr("class", "homes")
+                          .attr("class", d => "homes")
                           .selectAll("circle")
                           .data(homes)
                           .enter()
                           .append("rect")
+                            .attr("class", d => d.properties["name"])
                             .attr("x", d=> albersGuate(d.geometry.coordinates)[0]-symbolSize/2)
                             .attr("y", d=> albersGuate(d.geometry.coordinates)[1]-symbolSize/2)
                             .attr("width", symbolSize)
                             .attr("height", symbolSize)
                             .attr("fill", "#fff")
                             .attr("stroke", "#000")
-                            .attr("stroke-width", 0.25);
+                            .attr("stroke-width", 0.25)
+                            .attr("opacity", 0);
 
     //home labels
     var homeLabels = svgInner.append("g")
@@ -258,25 +260,25 @@ function addLabels(){
     var labels = svgInner.append("g").attr("class", "labels");
 
     var labelData = [
-      {"text": "Lago de Izabal",
-        "class": "chorti",
-        "x": ".76",
-        "y": ".57",
-        "textSize": {mobile:11,
-                    desktop:12},
-        "font-style": "italic",
-        "fill": "#aaa",
-      },
-      {"text": "Ch'orti' Territory",
-        "class": "chorti",
-        "x": ".72",
-        "y": ".735",
-        "textSize": {mobile:14,
-                    desktop:16},
-        "fill": "#fffee0",
-        "letter-spacing": "2.5px",
-        "font-weight": "bold"
-      },
+      // {"text": "Lago de Izabal",
+      //   "class": "chorti",
+      //   "x": ".76",
+      //   "y": ".57",
+      //   "textSize": {mobile:11,
+      //               desktop:12},
+      //   "font-style": "italic",
+      //   "fill": "#aaa",
+      // },
+      // {"text": "Ch'orti' Territory",
+      //   "class": "chorti",
+      //   "x": ".72",
+      //   "y": ".735",
+      //   "textSize": {mobile:14,
+      //               desktop:16},
+      //   "fill": "#fffee0",
+      //   "letter-spacing": "2.5px",
+      //   "font-weight": "bold"
+      // },
       {"text": "Q'eqchi' Territory",
         "class": "qeqchi",
         "x": ".57",
@@ -664,10 +666,11 @@ var updateChart = {
 
     var labels = [
       {"case": "c47",
-       "date": "February 7, 1967",
-       "name": "Cajón del Río Massacre",
-       "x": 2,
-       "y": 2,
+       "date": "February 1967",
+       "location": "Cajón del Río",
+       "desc": "14 killed by army",
+       "x": 4,
+       "y": 20,
        "textSize": {mobile:11,desktop:12},
        "width": {mobile:45,desktop:70},
        "xAlign": "right",
@@ -676,10 +679,13 @@ var updateChart = {
        "text": "“Many from here are [still] in Honduras. Almost half of the village left.” —Survivor"
       },
       {"case": "c1004",
+       "date": "November 1966",
+       "location": "Río Hondo",
+       "desc": "60 people killed by the Guatemalan Army",
        "x": -2,
-       "y": -2,
+       "y": -10,
        "textSize": {mobile:11,desktop:12},
-       "width": {mobile:38,desktop:60},
+       "width": {mobile:38,desktop:70},
        "xAlign": "left",
        "yAlign": "bottom",
        "text": "The soldiers doused them with gasoline and began to throw paper balls at them with fire. The victims were burned alive. —CEH"
@@ -753,6 +759,7 @@ function renderMassacreAnnotation(labelG){
 
   var circleBbox = parent.select("circle").node().getBBox();
 
+  var leaderLine = labelG.append("path");
   //add rectangle underneath text
   var textRect = labelG.append("rect");
 
@@ -770,6 +777,7 @@ function renderMassacreAnnotation(labelG){
     })
     .attr("dominant-baseline", "hanging")
     .text(label["text"])
+    .attr("text-shadow", "text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;");
 
   var dWidth = isMobile.matches ? label["width"].mobile : label["width"].desktop;
 
@@ -797,14 +805,70 @@ function renderMassacreAnnotation(labelG){
       return makeTranslate(x,y);
   });
 
+
+  var textPadding = 3;
+
   //add text rect
-  textRect.attr("x", 0)
-          .attr("y",0)
-          .attr("width", textW)
-          .attr("height", textH)
-          .attr("fill", "#000")
-          .attr("stroke", "#000")
-          .attr("stroke-width", 4);
+  textRect.attr("x", -textPadding)
+          .attr("y",-textPadding)
+          .attr("width", textW + textPadding*2)
+          .attr("height", textH + textPadding*2)
+          .attr("fill", "#111")
+          .attr("fill-opacity", 0.8)
+          .attr("stroke", "none");
+
+  //leader line dimensions
+  leaderLine.attr("d", function(d){
+                    if(d.xAlign == "right"){
+                        var x0 = -circleBbox["width"]/2 - label.x;
+                        var x1 = x0;
+                        var x2 = -label.x/2;
+                    } else {
+                        var x0 = textW + circleBbox["width"]/2 -label.x;
+                        var x1 = x0;
+                        var x2 = textW - label.x/2;
+                    }
+                    if(d.yAlign == "top"){
+                        var y0 = -circleBbox["height"]/2 -label.y;
+                        var y1 = textH/2;
+                        var y2 = y1;
+                    } else {
+                        var y0 = textH + circleBbox["height"]/2 -label.y;
+                        var y1 = textH/2;
+                        var y2 = y1;
+                    }
+
+
+
+
+                
+                  return `M ${x0} ${y0}L ${x1} ${y1}L ${x2} ${y2}`;
+                })
+            .attr("stroke", "#fff")
+            .attr("stroke-width", 0.4)
+            .attr("fill", "none");
+
+    //add name and date
+    labelG.append("text")
+            .attr("x", 0)
+            .attr("y", -textPadding - 1)
+            .attr("font-size", function(d){
+                  if(isMobile.matches) return d.textSize.mobile*zoomFactor*.85 +"px";
+                  else return d.textSize.desktop*zoomFactor*.85 +"px";
+            })
+            .attr("font-weight", "bold")
+            .attr("text-decoration", "underline")
+            .attr("fill", "#fff")
+            .attr("text-shadow", "text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;")
+            .attr("dominant-baseline", "auto")
+            .html(function(d){
+                return `<tspan x="0" dy="0em">${d.location} | ${d.date}</tspan>`;
+                // return `<tspan x="0" dy="-1em">${d.location} | ${d.date}</tspan>
+                //      // <tspan x="0" dy="1em">${d.desc}</tspan>`;
+             
+            });
+
+
 
 }
 
@@ -813,8 +877,8 @@ function renderMassacreAnnotation(labelG){
 //////////////////////////////////////////////////////////////////////
 
 var timeDomain = [new Date(1965,0,1), new Date(1969,11,31)];
-var timeDomain2 = [new Date(1970,0,1), new Date(1979,11,31)];
-var timeDomain3 = [new Date(1980,0,1), new Date(1995,11,31)];
+var timeDomain2 = [new Date(1970,0,1), new Date(1978,5,31)];
+var timeDomain3 = [new Date(1978,6,1), new Date(1982,11,31)];
 var timeDomain4 = [new Date(1983,0,1), new Date(1995,11,31)];
 var overallTimeDomain = [new Date(1965,0,1), new Date(1995,11,31)];
 
