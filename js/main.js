@@ -27,6 +27,53 @@ var overallTimePercent;
 var timeIndicator;
 var animationIndex = 0;
 
+var massacreAnnotations =  [
+      {"case": "c47",
+       "date": "February 1967",
+       "location": "Cajón del Río",
+       "group": "chorti",
+       "killed": 14,
+       "x": 4,
+       "y": 20,
+       "textSize": {mobile:11,desktop:12},
+       "width": {mobile:45,desktop:70},
+       "xAlign": "right",
+       "yAlign": "top",
+       "font-style": "italic",
+       "text": "“Many from here are [still] in Honduras. Almost half of the village left.” —Survivor"
+      },
+      {"case": "c1004",
+       "date": "November 1966",
+       "location": "Río Hondo",
+       "group": "chorti",
+       "killed": 61,
+       "x": -2,
+       "y": -10,
+       "textSize": {mobile:11,desktop:12},
+       "width": {mobile:38,desktop:70},
+       "xAlign": "left",
+       "yAlign": "bottom",
+       "text": "The soldiers doused them with gasoline and began to throw paper balls at them with fire. The victims were burned alive. —CEH"
+      },
+      {"case": "c9",
+       "date": "May 1978",
+       "location": "Panzós",
+       "group": "qeqchi",
+       "killed": 53,
+       "x": -5,
+       "y": 0,
+       "textSize": {mobile:11,desktop:12},
+       "width": {mobile:80,desktop:120},
+       "xAlign": "left",
+       "yAlign": "bottom",
+       "font-style": "italic",
+       "text": "“If they want land, they will have it in the cemetary.” —Soldier, just before massacre"
+      }
+];
+
+var casesWithAnnotations = massacreAnnotations.map(d=>d.case);
+
+
 
 function loadData(){
     Promise.all([
@@ -282,7 +329,7 @@ function addLabels(){
       {"text": "Q'eqchi' Territory",
         "class": "qeqchi",
         "x": ".57",
-        "y": ".535",
+        "y": ".525",
         "textSize": {mobile:14,
                     desktop:16},
         "fill": "#fbd6ff",
@@ -473,7 +520,6 @@ function drawMassacres(){
     var startTime = "1965_0";
     var currentData = massacresSpread.municipios.filter(m => m.mama[startTime]);
 
-
     // viewBox from "calculateCirclePositions" was 0 0 678.359 709
     //need to adjust values to account for the old viewbox
     //cant set directly through viewbox since we will animate for zooming
@@ -527,14 +573,35 @@ function updateMassacres(currentData,timePeriod){
   var massacreCircles = circleGroups.selectAll(".innerChildren")
                       .data(d=> d.mama[timePeriod].children, d=> d.caso ? d.caso : ("c"+ d.caso_ilustrativo))
                          .join(enter => enter.append("g")
-                              .attr("class", d=> d.caso ? ("innerChildren c"+ d.caso) : ("innerChildren c"+ d.caso_ilustrativo))
+                              .attr("class", function(d){
+                                var currentCase = d.caso ? ("c"+ d.caso) : ("c"+ d.caso_ilustrativo);
+                                return "innerChildren " + currentCase;
+                              })
                               .attr("transform", d => makeTranslate(d.x*scaleFactor,d.y*scaleFactor))
                                    .append("circle")
                                    .attr("r", d=>(d.r-0.1)*scaleFactor)
                                    .attr("fill-opacity", 0.9)
                                    .attr("fill", "#fff")
                                    .attr("stroke", "#555")
-                                   .attr("stroke-width", 0.1),
+                                   .attr("stroke-width", function(d){
+                                    //add massacre annotations
+                                    var currentCase = d.caso ? ("c"+ d.caso) : ("c"+ d.caso_ilustrativo);
+                                    //check if it has a massacre annotation, if so render
+                                    var currentAnnotationIndex = casesWithAnnotations.indexOf(currentCase);
+                                    if(currentAnnotationIndex != -1){
+                                        //add annotation
+                                        var label = massacreAnnotations[currentAnnotationIndex];
+                                        //bind data
+                                        var labelG = d3.select(this.parentNode)
+                                                          .append("g")
+                                                          .attr("opacity", 1)
+                                                          .attr("class", `massacreAnnotation ${label.group}`)
+                                                          .datum(label);
+                                        renderMassacreAnnotation(labelG); 
+                                    }
+
+                                    return 0.1;
+                                    }),
                           update => update.attr("transform", d => makeTranslate(d.x*scaleFactor,d.y*scaleFactor)),
                           exit => exit.remove());
 
@@ -587,7 +654,6 @@ function resizeLabels(){
         let index = d3.select(el).attr('backward');
 
         //check for multiple
-        console.log(index.includes(" "));
         if(!index.includes(" ")){
            updateChart[index]();
         } else {
@@ -625,7 +691,6 @@ var updateChart = {
   },
   zoomChorti: function(){    
     animationIndex = 1;
-    console.log("zooming chorti")
 
     var w2 = .30*w,
     h2 = 0.36*h,
@@ -659,60 +724,31 @@ var updateChart = {
   cajonDelRio: function(){
     animationIndex = 2;
 
-    //fade out jakelin labels
+    //fade out labels
     svg.selectAll(".qeqchi,.Jakelin").transition("fade labels out chorti")
                                            .duration(500)
                                            .attr("opacity", 0);
 
-    var labels = [
-      {"case": "c47",
-       "date": "February 1967",
-       "location": "Cajón del Río",
-       "desc": "14 killed by army",
-       "x": 4,
-       "y": 20,
-       "textSize": {mobile:11,desktop:12},
-       "width": {mobile:45,desktop:70},
-       "xAlign": "right",
-       "yAlign": "top",
-       "font-style": "italic",
-       "text": "“Many from here are [still] in Honduras. Almost half of the village left.” —Survivor"
-      },
-      {"case": "c1004",
-       "date": "November 1966",
-       "location": "Río Hondo",
-       "desc": "60 people killed by the Guatemalan Army",
-       "x": -2,
-       "y": -10,
-       "textSize": {mobile:11,desktop:12},
-       "width": {mobile:38,desktop:70},
-       "xAlign": "left",
-       "yAlign": "bottom",
-       "text": "The soldiers doused them with gasoline and began to throw paper balls at them with fire. The victims were burned alive. —CEH"
-      }
-    ];
 
+    // // add annotation class and bind data, then pass to rendering function
+    // for(var label of labels){
+    //     //bind data
+    //     var labelG = d3.select(`g.${label.case}`)
+    //                       .append("g")
+    //                       .attr("opacity", 0)
+    //                       .attr("class", "massacreAnnotation chorti")
+    //                       .datum(label);
 
-    // add annotation class and bind data, then pass to rendering function
-    for(var label of labels){
-        //bind data
-        var labelG = d3.select(`g.${label.case}`)
-                          .append("g")
-                          .attr("opacity", 0)
-                          .attr("class", "massacreAnnotation chorti")
-                          .datum(label);
-
-        console.log(labelG.empty());
-        if(!labelG.empty()){
-           renderMassacreAnnotation(labelG);
-        }
+    //     if(!labelG.empty()){
+    //        renderMassacreAnnotation(labelG);
+    //     }
         
 
-        // after rendering fade in
-        labelG.transition("fade in cajon labels")
-          .duration(500)
-          .attr("opacity", 1);
-    }
+    //     // after rendering fade in
+    //     labelG.transition("fade in cajon labels")
+    //       .duration(500)
+    //       .attr("opacity", 1);
+    // }
 
 
 
@@ -730,7 +766,7 @@ var updateChart = {
                .attr("opacity", 0);
   
       //zoom to new location
-      svg.transition("Zoom panzos").duration(1500).attr("viewBox", `${left} ${top} ${w2} ${h2}`)
+      svg.transition("Zoom qeqchi").duration(1500).attr("viewBox", `${left} ${top} ${w2} ${h2}`)
                 .on("end", function(){
                     calculateZoomFactor();
                     //fade in new labels
@@ -742,15 +778,36 @@ var updateChart = {
 
                 });
                   
-  
-         
+  }, panzos: function(){
+      animationIndex = 4;
+
+
+        // // add annotation class and bind data, then pass to rendering function
+        // for(var label of labels){
+        //     //bind data
+        //     var labelG = d3.select(`g.${label.case}`)
+        //                       .append("g")
+        //                       .attr("opacity", 0)
+        //                       .attr("class", "massacreAnnotation qeqchi")
+        //                       .datum(label);
+
+        //     if(!labelG.empty()){
+        //        renderMassacreAnnotation(labelG);
+        //     }
+            
+
+        //     // after rendering fade in
+        //     labelG.transition("fade in cajon labels")
+        //       .duration(500)
+        //       .attr("opacity", 1);
+        // }
+
 
 
   }
 }
 
 function renderMassacreAnnotation(labelG){
-  
   //clear previous
   labelG.html("");
 
@@ -853,19 +910,16 @@ function renderMassacreAnnotation(labelG){
             .attr("x", 0)
             .attr("y", -textPadding - 1)
             .attr("font-size", function(d){
-                  if(isMobile.matches) return d.textSize.mobile*zoomFactor*.85 +"px";
-                  else return d.textSize.desktop*zoomFactor*.85 +"px";
+                  if(isMobile.matches) return d.textSize.mobile*zoomFactor +"px";
+                  else return d.textSize.desktop*zoomFactor +"px";
             })
-            .attr("font-weight", "bold")
-            .attr("text-decoration", "underline")
+            .attr("font-weight", "normal")
             .attr("fill", "#fff")
             .attr("text-shadow", "text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;")
             .attr("dominant-baseline", "auto")
             .html(function(d){
-                return `<tspan x="0" dy="0em">${d.location} | ${d.date}</tspan>`;
-                // return `<tspan x="0" dy="-1em">${d.location} | ${d.date}</tspan>
-                //      // <tspan x="0" dy="1em">${d.desc}</tspan>`;
-             
+                return `<tspan x="0" dy="-1em" text-decoration="underline">${d.location} Massacre</tspan>
+                        <tspan x="0" dy="1em">${d.date} — ${d.killed} killed</tspan>`;
             });
 
 
