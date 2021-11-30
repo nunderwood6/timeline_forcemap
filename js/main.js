@@ -594,10 +594,14 @@ function updateMassacres(currentData,timePeriod){
                                         //bind data
                                         var labelG = d3.select(this.parentNode)
                                                           .append("g")
-                                                          .attr("opacity", 1)
+                                                          .attr("opacity", 0)
                                                           .attr("class", `massacreAnnotation ${label.group}`)
-                                                          .datum(label);
+                                                          .datum(label)
+
                                         renderMassacreAnnotation(labelG); 
+                                        labelG.transition("fade in annotation")
+                                                    .duration(500)
+                                                    .attr("opacity", 1);
                                     }
 
                                     return 0.1;
@@ -692,6 +696,11 @@ var updateChart = {
   zoomChorti: function(){    
     animationIndex = 1;
 
+    //fade out labels
+    svg.selectAll(".qeqchi,.Jakelin").transition("fade labels out chorti")
+                                           .duration(500)
+                                           .attr("opacity", 0);
+
     var w2 = .30*w,
     h2 = 0.36*h,
     left = 0.55*w,
@@ -721,40 +730,8 @@ var updateChart = {
             });
 
   },
-  cajonDelRio: function(){
-    animationIndex = 2;
-
-    //fade out labels
-    svg.selectAll(".qeqchi,.Jakelin").transition("fade labels out chorti")
-                                           .duration(500)
-                                           .attr("opacity", 0);
-
-
-    // // add annotation class and bind data, then pass to rendering function
-    // for(var label of labels){
-    //     //bind data
-    //     var labelG = d3.select(`g.${label.case}`)
-    //                       .append("g")
-    //                       .attr("opacity", 0)
-    //                       .attr("class", "massacreAnnotation chorti")
-    //                       .datum(label);
-
-    //     if(!labelG.empty()){
-    //        renderMassacreAnnotation(labelG);
-    //     }
-        
-
-    //     // after rendering fade in
-    //     labelG.transition("fade in cajon labels")
-    //       .duration(500)
-    //       .attr("opacity", 1);
-    // }
-
-
-
-  },
   zoomQeqchi: function(){
-      animationIndex = 3;
+      animationIndex = 2;
       var w2 = .40*w,
       h2 = 0.36*h,
       left = 0.38*w,
@@ -770,7 +747,7 @@ var updateChart = {
                 .on("end", function(){
                     calculateZoomFactor();
                     //fade in new labels
-                    if(animationIndex == 3){
+                    if(animationIndex == 2){
                         svg.selectAll(".Jakelin,.qeqchi").transition("fade in labels qeqchi")
                                 .duration(500)
                                 .attr("opacity", 1);
@@ -778,32 +755,6 @@ var updateChart = {
 
                 });
                   
-  }, panzos: function(){
-      animationIndex = 4;
-
-
-        // // add annotation class and bind data, then pass to rendering function
-        // for(var label of labels){
-        //     //bind data
-        //     var labelG = d3.select(`g.${label.case}`)
-        //                       .append("g")
-        //                       .attr("opacity", 0)
-        //                       .attr("class", "massacreAnnotation qeqchi")
-        //                       .datum(label);
-
-        //     if(!labelG.empty()){
-        //        renderMassacreAnnotation(labelG);
-        //     }
-            
-
-        //     // after rendering fade in
-        //     labelG.transition("fade in cajon labels")
-        //       .duration(500)
-        //       .attr("opacity", 1);
-        // }
-
-
-
   }
 }
 
