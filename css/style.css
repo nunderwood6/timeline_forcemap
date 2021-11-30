@@ -13,6 +13,10 @@ div{
 	margin: 0 auto;
 }
 
+a {
+	color: #e3f5fa;
+}
+
 
 div.opener {
 	background-image: url("../img/palm_invasion.jpg");
@@ -30,6 +34,7 @@ div.opener {
 div.opener h1 {
 	padding-top: 5%;
 	font-size: 4em;
+	font-weight: normal;
 	/*font-family: 'Philosopher', sans-serif;*/
 	text-align: center;
 	margin: 0 auto;
@@ -37,6 +42,7 @@ div.opener h1 {
 
 div.opener h2 {
 	font-size: 16px;
+	font-weight: normal;
 	/*font-family: 'Philosopher', sans-serif;*/
 	margin: 0 auto;
 	margin-top: 15px;
@@ -46,6 +52,7 @@ div.opener h2 {
 
 div.opener h4 {
 	position: absolute;
+	font-weight: normal;
 	bottom: 3%;
 	font-size: 16px;
 	/*font-family: 'Philosopher', sans-serif;*/

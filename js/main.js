@@ -39,7 +39,7 @@ var massacreAnnotations =  [
        "width": {mobile:45,desktop:70},
        "xAlign": "right",
        "yAlign": "top",
-       "font-style": "italic",
+       // "font-style": "italic",
        "text": "“Many from here are [still] in Honduras. Almost half of the village left.” —Survivor"
       },
       {"case": "c1004",
@@ -66,7 +66,7 @@ var massacreAnnotations =  [
        "width": {mobile:80,desktop:120},
        "xAlign": "left",
        "yAlign": "bottom",
-       "font-style": "italic",
+       // "font-style": "italic",
        "text": "“If they want land, they will have it in the cemetary.” —Soldier, just before massacre"
       }
 ];
@@ -256,27 +256,28 @@ function drawHomes(homes){
                         .append("g")
                           .attr("class", d=> d.properties["name"] + " label")
                           .attr("transform", function(d){
-                            if(d.properties.position == "right"){
+                            if(d.properties.positionX == "right"){
                               var x = albersGuate(d.geometry.coordinates)[0]+(symbolSize+labelPadding);
-                              var y = albersGuate(d.geometry.coordinates)[1]-(symbolSize+labelPadding);
                             } else {
-                              var x = albersGuate(d.geometry.coordinates)[0]-(symbolSize+labelPadding);
-                              var y = albersGuate(d.geometry.coordinates)[1]+(symbolSize+labelPadding);
+                              var x = albersGuate(d.geometry.coordinates)[0]-(symbolSize+labelPadding); 
                             }
+                            if(d.properties.positionY == "top") var y = albersGuate(d.geometry.coordinates)[1]-(symbolSize+labelPadding);
+                            else var y = albersGuate(d.geometry.coordinates)[1]+(symbolSize+labelPadding);
                             return `translate(${x},${y})`;
                           })
                           .html(function(d){
-                            if(d.properties.position == "right"){
+                            if(d.properties.positionY == "top"){
                               return `<text><tspan x="0" dy="-0.5em">${d.properties["name"]+ "'s home"}</tspan>
                                    <tspan x="0" dy="1em">${d.properties["town"]}</tspan></text>`;
                             } else {
-                              return `<text><tspan x="1" dx="0.2em" dy="0.5em">${d.properties["town"]}</tspan>
-                                   <tspan x="0" dx="0.2em" dy="1em">${d.properties["name"]+ "'s home"}</tspan></text>`;
+                              return `<text><tspan x="0" dy="-0.2em">${d.properties["town"]}</tspan>
+                                   <tspan x="0" dy="1em">${d.properties["name"]+ "'s home"}</tspan></text>`;
                             }
                           })
+                          .attr("dominant-baseline", d => (d.properties.positionY == "top") ? "auto" : "hanging")
                           .attr("font-size", d=>d.textSize)
                           .attr("text-anchor", function(d){
-                              if(d.properties.position == "right"){
+                              if(d.properties.positionX == "right"){
                                 var anchor = "start";
                               } else{
                                 var anchor = "end";
@@ -289,12 +290,13 @@ function drawHomes(homes){
                           .attr("text-shadow", "text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;");
 
 
-     // //testing viewbox
+     //testing Achi viewbox
+
      // zoomBox = svgInner.append("rect")
-     //                .attr("x", .35*w)
-     //                .attr("y", .35*h)
-     //                .attr("width", .40*w)
-     //                .attr("height", .36*h)
+     //                .attr("x", .28*w)
+     //                .attr("y", .48*h)
+     //                .attr("width", .30*w)
+     //                .attr("height", .30*h)
      //                .attr("stroke", "#fff")
      //                .attr("fill", "none");
 
@@ -334,7 +336,8 @@ function addLabels(){
                     desktop:16},
         "fill": "#fbd6ff",
         "letter-spacing": "3.5px",
-        "font-weight": "bold"}
+        "font-weight": "bold"
+      }
     ];
 
 
@@ -732,12 +735,13 @@ var updateChart = {
   },
   zoomQeqchi: function(){
       animationIndex = 2;
+
       var w2 = .40*w,
       h2 = 0.36*h,
       left = 0.38*w,
       top= 0.35*h;
 
-      //zoom out east labels
+      //fade out chorti labels
       svg.selectAll(".chorti,.Wilmer,.Juan").transition("fade out labels qeqchi")
                .duration(500)
                .attr("opacity", 0);
@@ -755,6 +759,36 @@ var updateChart = {
 
                 });
                   
+  },
+  zoomAchi: function(){
+    animationIndex = 3;
+
+    var w2 = .30*w,
+    h2 = 0.30*h,
+    left = 0.28*w,
+    top= 0.48*h;
+
+    //fade out qeqchi labels
+    svg.selectAll(".Jakelin,.qeqchi").transition("fade out labels achi")
+             .duration(500)
+             .attr("opacity", 0);
+
+    //zoom to new location
+    svg.transition("Zoom achi").duration(1500).attr("viewBox", `${left} ${top} ${w2} ${h2}`)
+              .on("end", function(){
+                  calculateZoomFactor();
+                  //fade in new labels
+                  if(animationIndex == 3){
+                      svg.selectAll(".Carlos,.achi").transition("fade in labels achi")
+                              .duration(500)
+                              .attr("opacity", 1);
+                  }
+
+              });
+
+
+
+
   }
 }
 
@@ -775,9 +809,9 @@ function renderMassacreAnnotation(labelG){
   var textElement = labelG.append("text")
     .attr("class", "label wrapped")
     .datum(label)
-    .attr("fill", "#fff")
+    .attr("fill", "#000")
     .style("font-family", "Lora")
-    .style("font-weight", "bold")
+    // .style("font-weight", "bold")
     .attr("font-style", d=> d["font-style"] ? d["font-style"] : "normal")
     .attr("font-size", function(d){
           if(isMobile.matches) return d.textSize.mobile*zoomFactor +"px";
@@ -787,7 +821,10 @@ function renderMassacreAnnotation(labelG){
     .text(label["text"])
     .attr("text-shadow", "text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;");
 
+
+
   var dWidth = isMobile.matches ? label["width"].mobile : label["width"].desktop;
+  console.log(dWidth);
 
   textElement.call(wrapText, dWidth, 12*zoomFactor);
 
@@ -821,8 +858,8 @@ function renderMassacreAnnotation(labelG){
           .attr("y",-textPadding)
           .attr("width", textW + textPadding*2)
           .attr("height", textH + textPadding*2)
-          .attr("fill", "#111")
-          .attr("fill-opacity", 0.8)
+          .attr("fill", "#fff")
+          .attr("fill-opacity", 0.9)
           .attr("stroke", "none");
 
   //leader line dimensions
@@ -864,7 +901,7 @@ function renderMassacreAnnotation(labelG){
                   if(isMobile.matches) return d.textSize.mobile*zoomFactor +"px";
                   else return d.textSize.desktop*zoomFactor +"px";
             })
-            .attr("font-weight", "normal")
+            .attr("font-weight", "bold")
             .attr("fill", "#fff")
             .attr("text-shadow", "text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;")
             .attr("dominant-baseline", "auto")
@@ -883,8 +920,8 @@ function renderMassacreAnnotation(labelG){
 
 var timeDomain = [new Date(1965,0,1), new Date(1969,11,31)];
 var timeDomain2 = [new Date(1970,0,1), new Date(1978,5,31)];
-var timeDomain3 = [new Date(1978,6,1), new Date(1982,11,31)];
-var timeDomain4 = [new Date(1983,0,1), new Date(1995,11,31)];
+var timeDomain3 = [new Date(1978,6,1), new Date(1982,3,31)];
+var timeDomain4 = [new Date(1982,4,1), new Date(1995,11,31)];
 var overallTimeDomain = [new Date(1965,0,1), new Date(1995,11,31)];
 
 
