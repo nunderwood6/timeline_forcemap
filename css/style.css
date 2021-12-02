@@ -1,7 +1,7 @@
 html,body {
-	/*font-family: proxima-nova, sans-serif;*/
+	font-family: proxima-nova, sans-serif;
 	/*font-family: 'Philosopher', sans-serif;*/
-font-family: 'Lora', serif;
+/*font-family: 'Lora', serif;*/
    height: 100%;
    width: 100%;
    margin: 0;
@@ -15,6 +15,16 @@ div{
 
 a {
 	color: #e3f5fa;
+}
+
+span.ceh {
+	background-color: #eee;
+	color: #000;
+	padding: 1px;
+	font-family: 'Lora', serif;
+	font-size: 15px;
+	font-style: italic;
+
 }
 
 

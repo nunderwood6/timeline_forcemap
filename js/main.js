@@ -34,12 +34,11 @@ var massacreAnnotations =  [
        "group": "chorti",
        "killed": 14,
        "x": 4,
-       "y": 20,
+       "y": 40,
        "textSize": {mobile:11,desktop:12},
        "width": {mobile:45,desktop:70},
        "xAlign": "right",
        "yAlign": "top",
-       // "font-style": "italic",
        "text": "“Many from here are [still] in Honduras. Almost half of the village left.” —Survivor"
       },
       {"case": "c1004",
@@ -66,8 +65,33 @@ var massacreAnnotations =  [
        "width": {mobile:80,desktop:120},
        "xAlign": "left",
        "yAlign": "bottom",
-       // "font-style": "italic",
        "text": "“If they want land, they will have it in the cemetary.” —Soldier, just before massacre"
+      },
+      {"case": "c10_1",
+       "date": "February 1978",
+       "location": "Río Negro",
+       "group": "achi",
+       "killed": 74,
+       "x": 15,
+       "y": -10,
+       "textSize": {mobile:11,desktop:12},
+       "width": {mobile:50,desktop:70},
+       "xAlign": "right",
+       "yAlign": "bottom",
+       "text": "“In the community before [it was] calm, after the construction of the dam is when many problems arose.”"
+      },
+      {"case": "c10_2",
+       "date": "March 1978",
+       "location": "Río Negro",
+       "group": "achi",
+       "killed": 177,
+       "x": 10,
+       "y": 10,
+       "textSize": {mobile:11,desktop:12},
+       "width": {mobile:80,desktop:120},
+       "xAlign": "right",
+       "yAlign": "bottom",
+       "text": `"There I lost my family, well, my brother, wife, nephews, mother-in-law, brother-in-law, comadres, aunts, everyone there...nobody stayed in the village, we went to the mountains...we were abandoned, without spirit."`
       }
 ];
 
@@ -682,7 +706,7 @@ function resizeLabels(){
 var updateChart = {
   zoomOutFull: function(){
     animationIndex = 0;
-    svg.selectAll(".chorti,.Wilmer,.Juan").transition("fade out east labels backward")
+    svg.selectAll(".chorti,.Wilmer,.Juan,.achi,.Carlos").transition("fade out east labels backward")
                      .duration(500)
                      .attr("opacity", 0)
                      .on("end", function(){
@@ -786,8 +810,32 @@ var updateChart = {
 
               });
 
+  },
+  zoomChuj: function(){
+    animationIndex = 4;
 
+    var w2 = .30*w,
+    h2 = 0.30*h,
+    left = 0.10*w,
+    top= 0.28*h;
 
+    //fade out achi labels
+    svg.selectAll(".Carlos,.achi").transition("fade out labels chuj")
+             .duration(500)
+             .attr("opacity", 0);
+
+    //zoom to new location
+    svg.transition("Zoom chuj").duration(1500).attr("viewBox", `${left} ${top} ${w2} ${h2}`)
+              .on("end", function(){
+                  calculateZoomFactor();
+                  //fade in new labels
+                  if(animationIndex == 4){
+                      svg.selectAll(".Felipe,.chuj").transition("fade in labels chuj")
+                              .duration(500)
+                              .attr("opacity", 1);
+                  }
+
+              });
 
   }
 }
@@ -921,7 +969,7 @@ function renderMassacreAnnotation(labelG){
 var timeDomain = [new Date(1965,0,1), new Date(1969,11,31)];
 var timeDomain2 = [new Date(1970,0,1), new Date(1978,5,31)];
 var timeDomain3 = [new Date(1978,6,1), new Date(1982,3,31)];
-var timeDomain4 = [new Date(1982,4,1), new Date(1995,11,31)];
+var timeDomain4 = [new Date(1982,4,1), new Date(1982,11,31)];
 var overallTimeDomain = [new Date(1965,0,1), new Date(1995,11,31)];
 
 
@@ -936,6 +984,10 @@ var timeScale2 = d3.scaleLinear()
 var timeScale3 = d3.scaleLinear()
                     .domain(timeDomain3)
                     .range([0,1]);
+
+var timeScale4 = d3.scaleLinear()
+                    .domain(timeDomain4)
+                    .range([0,1])
 
 var timeScaleOverall = d3.scaleLinear()
                     .domain(overallTimeDomain)
@@ -1180,16 +1232,80 @@ function intersectionCallback3(entries, observer){
     if(!listening3) {
       window.addEventListener("scroll",onScroll3);
     }
-    listening2 = true;
+    listening3 = true;
   } else {
     window.removeEventListener("scroll", onScroll3);
-    listening2 = false;
+    listening3 = false;
+  }
+}
+
+////////////////////////////////////////////
+
+let observer4 = new IntersectionObserver(intersectionCallback4, observerOptions);
+var target4 = d3.select(".time4").node();
+observer4.observe(target4);
+
+
+function onScroll4(){
+  latestKnownTop4 = target4.getBoundingClientRect().top;
+  requestTick4();
+}
+
+var ticking4 = false;
+
+function requestTick4(){
+  if(!ticking4){
+      requestAnimationFrame(update4);
+  }
+  ticking4 = true;
+}
+
+function update4(){
+    //reset tick to capture next scroll
+  ticking4 = false;
+  
+  var currentTop = latestKnownTop4;
+  var percent = (window.innerHeight - currentTop)/ window.innerHeight;
+  if(percent>1) percent = 1;
+  if(percent<0) percent = 0;
+
+  var newTime = timeScale4.invert(percent);
+
+  var newDisplayTime = fmtMonthYear(newTime);
+  var timePeriod = fmtMonthYearNum(newTime);
+  overallTimePercent = timeScaleOverall(newTime);
+
+
+  if(newDisplayTime != currentDisplayTime){
+    //update year text
+    currentDisplayTime = newDisplayTime
+    updateTime();
+    //update massacres
+    var currentData = massacresSpread.municipios.filter(m => m.mama[timePeriod]);
+    updateMassacres(currentData,timePeriod);
+
+  }
+
+}
+
+var listening4;
+
+function intersectionCallback4(entries, observer){
+  if(entries[0].intersectionRatio>0){
+    if(!listening4) {
+      window.addEventListener("scroll",onScroll4);
+    }
+    listening4 = true;
+  } else {
+    window.removeEventListener("scroll", onScroll4);
+    listening4 = false;
   }
 }
 
 
 
-////Helpers/////////////////////
+////Helpers////////////////////////////////
+///////////////////////////////////////////////////////////////
 
 function debounce(func, wait, immediate) {
   var timeout;
