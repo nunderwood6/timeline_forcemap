@@ -39,7 +39,8 @@ var massacreAnnotations =  [
        "width": {mobile:45,desktop:70},
        "xAlign": "right",
        "yAlign": "top",
-       "text": "“Many from here are [still] in Honduras. Almost half of the village left.” —Survivor"
+       "text": "“Many from here are [still] in Honduras. Almost half of the village left.” —Survivor",
+       "animationIndex": 1
       },
       {"case": "c1004",
        "date": "November 1966",
@@ -52,7 +53,8 @@ var massacreAnnotations =  [
        "width": {mobile:38,desktop:70},
        "xAlign": "left",
        "yAlign": "bottom",
-       "text": "The soldiers doused them with gasoline and began to throw paper balls at them with fire. The victims were burned alive. —CEH"
+       "text": "The soldiers doused them with gasoline and began to throw paper balls at them with fire. The victims were burned alive. —CEH",
+       "animationIndex": 1
       },
       {"case": "c9",
        "date": "May 1978",
@@ -65,33 +67,66 @@ var massacreAnnotations =  [
        "width": {mobile:80,desktop:120},
        "xAlign": "left",
        "yAlign": "bottom",
-       "text": "“If they want land, they will have it in the cemetary.” —Soldier, just before massacre"
+       "text": "“If they want land, they will have it in the cemetary.” —Soldier, just before massacre",
+       "animationIndex": 2
       },
       {"case": "c10_1",
-       "date": "February 1978",
+       "date": "February 1982",
        "location": "Río Negro",
        "group": "achi",
        "killed": 74,
-       "x": 15,
-       "y": -10,
+       "x": 10,
+       "y": -52,
        "textSize": {mobile:11,desktop:12},
-       "width": {mobile:50,desktop:70},
+       "width": {mobile:42,desktop:100},
        "xAlign": "right",
-       "yAlign": "bottom",
-       "text": "“In the community before [it was] calm, after the construction of the dam is when many problems arose.”"
+       "yAlign": "top",
+       "text": "“In the community before [it was] calm, after the construction of the dam is when many problems arose.”",
+       "animationIndex": 3
       },
       {"case": "c10_2",
-       "date": "March 1978",
+       "date": "March 1982",
        "location": "Río Negro",
        "group": "achi",
        "killed": 177,
-       "x": 10,
-       "y": 10,
+       "victimType": "women and children ",
+       "x": 7,
+       "y": 13,
        "textSize": {mobile:11,desktop:12},
-       "width": {mobile:80,desktop:120},
+       "width": {mobile:40,desktop:100},
        "xAlign": "right",
        "yAlign": "bottom",
-       "text": `"There I lost my family, well, my brother, wife, nephews, mother-in-law, brother-in-law, comadres, aunts, everyone there...nobody stayed in the village, we went to the mountains...we were abandoned, without spirit."`
+       "text": `"There I lost my family, well, my brother, wife, nephews, mother-in-law, brother-in-law, comrades, aunts, everyone there...nobody stayed in the village, we went to the mountains...we were abandoned, without spirit."`,
+       "animationIndex": 3
+      },
+      {"case": "c18",
+       "double": true,
+       "date": "July 1982",
+       "location": "San Francisco",
+       "group": "chuj",
+       "killed": 350,
+       "x": 10,
+       "y": -93,
+       "textSize": {mobile:11,desktop:12},
+       "width": {mobile:60,desktop:100},
+       "xAlign": "right",
+       "yAlign": "top",
+       "text": `“After they killed our women, they took our children, little ones of ten, eight, five and four years old, they just grabbed their legs and smashed them on the roofs of the houses, and left the brains of the little ones torn apart like corn dough. I had six children, all of them died...also my wife. None were left alive.”`,
+       "animationIndex": 4
+      },
+      {"case": "c18",
+       "date": "July 1982",
+       "location": "San Francisco",
+       "group": "chuj",
+       "killed": 350,
+       "x": 10,
+       "y": -50,
+       "textSize": {mobile:11,desktop:12},
+       "width": {mobile:70,desktop:100},
+       "xAlign": "right",
+       "yAlign": "top",
+       "text": `Once the soldiers finished the massacre, they put the meat of the oxen that they had butchered on the fire and ate, drank and danced to the music of the radio-recorders that they stole from the houses. Before leaving, they set fire to the village.`,
+       "animationIndex": 4
       }
 ];
 
@@ -625,10 +660,36 @@ function updateMassacres(currentData,timePeriod){
                                                           .attr("class", `massacreAnnotation ${label.group}`)
                                                           .datum(label)
 
-                                        renderMassacreAnnotation(labelG); 
-                                        labelG.transition("fade in annotation")
+                                        renderMassacreAnnotation(labelG);
+
+                                        //check for double
+                                        if(label.double){
+
+
+                                          var label2 = massacreAnnotations[currentAnnotationIndex+1];
+                                          console.log(label2);
+
+                                          var labelG2 = d3.select(this.parentNode)
+                                                          .append("g")
+                                                          .attr("opacity", 0)
+                                                          .attr("class", `massacreAnnotation ${label.group}`)
+                                                          .datum(label2);
+                                          renderMassacreAnnotation(labelG2,true);
+
+                                          if(label2.animationIndex == animationIndex){
+                                              labelG2.transition("fade in annotation")
                                                     .duration(500)
                                                     .attr("opacity", 1);
+                                          }
+
+
+                                        }
+                                        if(label.animationIndex == animationIndex){
+                                            labelG.transition("fade in annotation")
+                                                        .duration(500)
+                                                        .attr("opacity", 1);
+                                        }
+                                        
                                     }
 
                                     return 0.1;
@@ -840,7 +901,7 @@ var updateChart = {
   }
 }
 
-function renderMassacreAnnotation(labelG){
+function renderMassacreAnnotation(labelG,second){
   //clear previous
   labelG.html("");
 
@@ -860,7 +921,8 @@ function renderMassacreAnnotation(labelG){
     .attr("fill", "#000")
     .style("font-family", "Lora")
     // .style("font-weight", "bold")
-    .attr("font-style", d=> d["font-style"] ? d["font-style"] : "normal")
+    // .attr("font-style", d=> d["font-style"] ? d["font-style"] : "normal")
+    .attr("font-style", "italic")
     .attr("font-size", function(d){
           if(isMobile.matches) return d.textSize.mobile*zoomFactor +"px";
           else return d.textSize.desktop*zoomFactor +"px";
@@ -872,7 +934,6 @@ function renderMassacreAnnotation(labelG){
 
 
   var dWidth = isMobile.matches ? label["width"].mobile : label["width"].desktop;
-  console.log(dWidth);
 
   textElement.call(wrapText, dWidth, 12*zoomFactor);
 
@@ -941,22 +1002,26 @@ function renderMassacreAnnotation(labelG){
             .attr("stroke-width", 0.4)
             .attr("fill", "none");
 
-    //add name and date
-    labelG.append("text")
-            .attr("x", 0)
-            .attr("y", -textPadding - 1)
-            .attr("font-size", function(d){
-                  if(isMobile.matches) return d.textSize.mobile*zoomFactor +"px";
-                  else return d.textSize.desktop*zoomFactor +"px";
-            })
-            .attr("font-weight", "bold")
-            .attr("fill", "#fff")
-            .attr("text-shadow", "text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;")
-            .attr("dominant-baseline", "auto")
-            .html(function(d){
-                return `<tspan x="0" dy="-1em" text-decoration="underline">${d.location} Massacre</tspan>
-                        <tspan x="0" dy="1em">${d.date} — ${d.killed} killed</tspan>`;
-            });
+    //don't add if double
+    if(!second){
+        //add name and date
+        labelG.append("text")
+                .attr("x", 0)
+                .attr("y", -textPadding - 1)
+                .attr("font-size", function(d){
+                      if(isMobile.matches) return d.textSize.mobile*zoomFactor +"px";
+                      else return d.textSize.desktop*zoomFactor +"px";
+                })
+                .attr("font-weight", "bold")
+                .attr("fill", "#fff")
+                .attr("text-shadow", "text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;")
+                .attr("dominant-baseline", "auto")
+                .html(function(d){
+                    return `<tspan x="0" dy="-1em" text-decoration="underline">${d.location} Massacre</tspan>
+                            <tspan x="0" dy="1em">${d.date} — ${d.killed} ${d.victimType ? d.victimType : ""}killed</tspan>`;
+                });
+    }
+
 
 
 
