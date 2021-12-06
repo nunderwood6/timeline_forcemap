@@ -767,7 +767,7 @@ function resizeLabels(){
 var updateChart = {
   zoomOutFull: function(){
     animationIndex = 0;
-    svg.selectAll(".chorti,.Wilmer,.Juan,.achi,.Carlos").transition("fade out east labels backward")
+    svg.selectAll(".chorti,.Wilmer,.Juan,.chuj,.Felipe").transition("fade out east labels backward")
                      .duration(500)
                      .attr("opacity", 0)
                      .on("end", function(){
@@ -1035,6 +1035,7 @@ var timeDomain = [new Date(1965,0,1), new Date(1969,11,31)];
 var timeDomain2 = [new Date(1970,0,1), new Date(1978,5,31)];
 var timeDomain3 = [new Date(1978,6,1), new Date(1982,3,31)];
 var timeDomain4 = [new Date(1982,4,1), new Date(1982,11,31)];
+var timeDomain5 = [new Date(1983,1,1), new Date(1995,11,31)];
 var overallTimeDomain = [new Date(1965,0,1), new Date(1995,11,31)];
 
 
@@ -1052,6 +1053,10 @@ var timeScale3 = d3.scaleLinear()
 
 var timeScale4 = d3.scaleLinear()
                     .domain(timeDomain4)
+                    .range([0,1])
+
+var timeScale5 = d3.scaleLinear()
+                    .domain(timeDomain5)
                     .range([0,1])
 
 var timeScaleOverall = d3.scaleLinear()
@@ -1364,6 +1369,69 @@ function intersectionCallback4(entries, observer){
   } else {
     window.removeEventListener("scroll", onScroll4);
     listening4 = false;
+  }
+}
+
+////////////////////////////////////////////
+
+let observer5 = new IntersectionObserver(intersectionCallback5, observerOptions);
+var target5 = d3.select(".time5").node();
+observer5.observe(target5);
+
+
+function onScroll5(){
+  latestKnownTop5 = target5.getBoundingClientRect().top;
+  requestTick5();
+}
+
+var ticking5 = false;
+
+function requestTick5(){
+  if(!ticking5){
+      requestAnimationFrame(update5);
+  }
+  ticking5 = true;
+}
+
+function update5(){
+    //reset tick to capture next scroll
+  ticking5 = false;
+  
+  var currentTop = latestKnownTop5;
+  var percent = (window.innerHeight - currentTop)/ window.innerHeight;
+  if(percent>1) percent = 1;
+  if(percent<0) percent = 0;
+
+  var newTime = timeScale5.invert(percent);
+
+  var newDisplayTime = fmtMonthYear(newTime);
+  var timePeriod = fmtMonthYearNum(newTime);
+  overallTimePercent = timeScaleOverall(newTime);
+
+
+  if(newDisplayTime != currentDisplayTime){
+    //update year text
+    currentDisplayTime = newDisplayTime
+    updateTime();
+    //update massacres
+    var currentData = massacresSpread.municipios.filter(m => m.mama[timePeriod]);
+    updateMassacres(currentData,timePeriod);
+
+  }
+
+}
+
+var listening5;
+
+function intersectionCallback5(entries, observer){
+  if(entries[0].intersectionRatio>0){
+    if(!listening5) {
+      window.addEventListener("scroll",onScroll5);
+    }
+    listening5 = true;
+  } else {
+    window.removeEventListener("scroll", onScroll5);
+    listening5 = false;
   }
 }
 
