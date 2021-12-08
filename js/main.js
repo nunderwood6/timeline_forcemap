@@ -236,13 +236,25 @@ function positionMap(municipios,focusBox,rasterBox,countries){
     var rasterHeight = rasterBounds[1][1] - rasterBounds[0][1];
     var rasterOrigin = [rasterBounds[0][0],rasterBounds[0][1]];
 
-    //append raster background
+    //append raster backgrounds
     svgInner.append("image")
             .attr("href", "img/dot_all.jpg")
+            .attr("class", "allDot")
             .attr("x", rasterOrigin[0])
             .attr("y", rasterOrigin[1])
             .attr("width", rasterWidth + "px")
-            .attr("height", rasterHeight + "px");
+            .attr("height", rasterHeight + "px")
+            .attr("opacity", "1");
+
+    //append binary
+    svgInner.append("image")
+            .attr("href", "img/dot_binary_65p.jpg")
+            .attr("class", "binaryDot")
+            .attr("x", rasterOrigin[0])
+            .attr("y", rasterOrigin[1])
+            .attr("width", rasterWidth + "px")
+            .attr("height", rasterHeight + "px")
+            .attr("opacity", "0");
 
     //add event listener for resize
     d3.select(window).on('resize', resized);
@@ -642,7 +654,7 @@ function updateMassacres(currentData,timePeriod){
                               .attr("transform", d => makeTranslate(d.x*scaleFactor,d.y*scaleFactor))
                                    .append("circle")
                                    .attr("r", d=>(d.r-0.1)*scaleFactor)
-                                   .attr("fill-opacity", 0.9)
+                                   .attr("fill-opacity", 0.8)
                                    .attr("fill", "#fff")
                                    .attr("stroke", "#555")
                                    .attr("stroke-width", function(d){
@@ -827,7 +839,7 @@ var updateChart = {
       top= 0.35*h;
 
       //fade out chorti labels
-      svg.selectAll(".chorti,.Wilmer,.Juan").transition("fade out labels qeqchi")
+      svg.selectAll(".chorti,.Wilmer,.Juan,.achi,.Carlos").transition("fade out labels qeqchi")
                .duration(500)
                .attr("opacity", 0);
   
@@ -898,6 +910,18 @@ var updateChart = {
 
               });
 
+  },
+  fadeBinary: function(){
+    //fade in binary
+    svg.select(".binaryDot").transition("fadeInBinary")
+          .duration(500)
+          .attr("opacity", 1)
+  },
+  fadeAll: function(){
+    //fade out binary
+    svg.select(".binaryDot").transition("fadeOutBinary")
+          .duration(500)
+          .attr("opacity", 0)
   }
 }
 
