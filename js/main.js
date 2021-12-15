@@ -26,6 +26,7 @@ var bars;
 var overallTimePercent;
 var timeIndicator;
 var animationIndex = 0;
+var defendersData;
 
 var massacreAnnotations =  [
       {"case": "c47",
@@ -100,7 +101,6 @@ var massacreAnnotations =  [
        "animationIndex": 3
       },
       {"case": "c18",
-       "double": true,
        "date": "July 1982",
        "location": "San Francisco",
        "group": "chuj",
@@ -112,7 +112,8 @@ var massacreAnnotations =  [
        "xAlign": "right",
        "yAlign": "top",
        "text": `“After they killed our women, they took our children, little ones of ten, eight, five and four years old, they just grabbed their legs and smashed them on the roofs of the houses, and left the brains of the little ones torn apart like corn dough. I had six children, all of them died...also my wife. None were left alive.”`,
-       "animationIndex": 4
+       "animationIndex": 4,
+       "double": true
       },
       {"case": "c18",
        "date": "July 1982",
@@ -126,7 +127,8 @@ var massacreAnnotations =  [
        "xAlign": "right",
        "yAlign": "top",
        "text": `Once the soldiers finished the massacre, they put the meat of the oxen that they had butchered on the fire and ate, drank and danced to the music of the radio-recorders that they stole from the houses. Before leaving, they set fire to the village.`,
-       "animationIndex": 4
+       "animationIndex": 4,
+       "second": true
       }
 ];
 
@@ -143,9 +145,10 @@ function loadData(){
       d3.json("data/circle_positions.json"),
       d3.json("data/home_points.geojson"),
       d3.json("data/departamentos_topo.json"),
-      d3.json("data/yearly_totals.json")
+      d3.json("data/yearly_totals.json"),
+      d3.csv("data/defenders_data.csv")
     ])
-    .then(function([municipiosTOPO,focusAreaJSON,rasterAreaJSON,countriesTOPO,circlePositionsJSON,homesJSON,departamentosTOPO,yearlyTotalsJSON]){
+    .then(function([municipiosTOPO,focusAreaJSON,rasterAreaJSON,countriesTOPO,circlePositionsJSON,homesJSON,departamentosTOPO,yearlyTotalsJSON,defendersCSV]){
 
         var municipios = topojson.feature(municipiosTOPO, municipiosTOPO.objects.municipios).features;
         var departamentos = topojson.feature(departamentosTOPO,departamentosTOPO.objects.departamentos).features;
@@ -155,14 +158,18 @@ function loadData(){
         var homes = homesJSON.features;
         massacresSpread = circlePositionsJSON;
         yearlyTotals = yearlyTotalsJSON;
+        defendersData = defendersCSV;
 
         positionMap(municipios,focusBox,rasterBox,countries);
-        // drawMunicipios(municipios,departamentos);
+        drawMunicipios(municipios,departamentos);
         drawHomes(homes);
         drawMassacres();
         addDiscreteListeners();
         addLabels();
         renderMassacreChart();
+
+        //build defenders map
+        // renderDefendersData();
 
     });
 }
@@ -175,6 +182,7 @@ function positionMap(municipios,focusBox,rasterBox,countries){
 
 
     var margin = {top: 5, right: 5, bottom: 5, left: 5}
+    // var margin = {top: 0, right: 0, bottom: 0, left: 0}
 
     //create guatemalaprojection
     const centerLocation = {
@@ -216,6 +224,9 @@ function positionMap(municipios,focusBox,rasterBox,countries){
             // .attr("overflow", "visible")
             // .attr("viewBox", `0 0 ${w} ${h}`);
 
+
+
+            console.log(computedBox);
     //add focusBox as rectangle so we can calculate bbox for scaling later
     renderedBox = svgInner.append("rect")
               .attr("x", computedBox[0][0])
@@ -224,7 +235,7 @@ function positionMap(municipios,focusBox,rasterBox,countries){
               .attr("height", focusHeight)
               .attr("fill", "none")
               .attr("stroke", "#fff")
-              .attr("stroke-width", 2);
+              .attr("stroke-width", 0.25);
 
     calculateZoomFactor();
 
@@ -250,11 +261,24 @@ function positionMap(municipios,focusBox,rasterBox,countries){
     svgInner.append("image")
             .attr("href", "img/dot_binary_65p.jpg")
             .attr("class", "binaryDot")
+            .attr("x", computedBox[0][0])
+            .attr("y", computedBox[0][1])
+            .attr("width", focusWidth)
+            .attr("height", focusHeight)
             .attr("x", rasterOrigin[0])
             .attr("y", rasterOrigin[1])
             .attr("width", rasterWidth + "px")
             .attr("height", rasterHeight + "px")
             .attr("opacity", "0");
+
+    // renderedBox = svgInner.append("rect")
+    //           .attr("x", computedBox[0][0])
+    //           .attr("y", computedBox[0][1])
+    //           .attr("width", focusWidth)
+    //           .attr("height", focusHeight)
+    //           .attr("fill", "none")
+    //           .attr("stroke", "#fff")
+    //           .attr("stroke-width", 0.2);
 
     //add event listener for resize
     d3.select(window).on('resize', resized);
@@ -283,7 +307,8 @@ function drawMunicipios(municipioData,departamentoData){
                                 .attr("id", function(d){
                                   return "m" + d.properties["codigo_mun"];
                                 })
-                                .attr("fill", "none");
+                                .attr("fill", "none")
+                                .style("display", "none");
 
     // var departamentos = svgInner.append("g")
     //                         .selectAll(".departamento")
@@ -679,14 +704,13 @@ function updateMassacres(currentData,timePeriod){
 
 
                                           var label2 = massacreAnnotations[currentAnnotationIndex+1];
-                                          console.log(label2);
 
                                           var labelG2 = d3.select(this.parentNode)
                                                           .append("g")
                                                           .attr("opacity", 0)
                                                           .attr("class", `massacreAnnotation ${label.group}`)
                                                           .datum(label2);
-                                          renderMassacreAnnotation(labelG2,true);
+                                          renderMassacreAnnotation(labelG2);
 
                                           if(label2.animationIndex == animationIndex){
                                               labelG2.transition("fade in annotation")
@@ -925,7 +949,48 @@ var updateChart = {
   }
 }
 
-function renderMassacreAnnotation(labelG,second){
+function renderDefendersData() {
+    console.log(defendersData);
+    // var defendersYear = 2019;
+
+    var defenderScale = d3.scaleSqrt()
+                  .domain([0,5])
+                  .range([0, 8]);
+
+    // var currentDefendersData = defendersData.filter(m => m[defendersYear]);
+
+    var defenders = svgInner.selectAll(".defenderCircles")
+                        .data(defendersData)
+                        .enter()
+                        .append("g")
+                          .attr("transform", function(d){
+                                var codigo = d.codigo_municipio;
+                                var municipio = svg.select(`#m${codigo}`);
+                                var centroid = pathGuate.centroid(municipio.datum());
+                                return makeTranslate(centroid[0],centroid[1]);
+                          })
+
+                      var circles = defenders.append("circle")
+                          .attr("r", d=>defenderScale(d.total))
+                          .attr("stroke", "#fff")
+                          .attr("stroke-width", 0.85)
+                          .attr("fill", "#000")
+                          .attr("fill-opacity", 0.8);
+
+    // //add municipio code as text
+    // defenders.append("text")
+    //               .text(d=> d.codigo_municipio)
+    //               .attr("fill", "#fff");
+
+
+
+}
+
+
+
+
+function renderMassacreAnnotation(labelG){
+
   //clear previous
   labelG.html("");
 
@@ -1027,7 +1092,8 @@ function renderMassacreAnnotation(labelG,second){
             .attr("fill", "none");
 
     //don't add if double
-    if(!second){
+    if(!label["second"]){
+        console.log("adding title")
         //add name and date
         labelG.append("text")
                 .attr("x", 0)
@@ -1056,10 +1122,10 @@ function renderMassacreAnnotation(labelG,second){
 //////////////////////////////////////////////////////////////////////
 
 var timeDomain = [new Date(1965,0,1), new Date(1969,11,31)];
-var timeDomain2 = [new Date(1970,0,1), new Date(1978,5,31)];
-var timeDomain3 = [new Date(1978,6,1), new Date(1982,3,31)];
-var timeDomain4 = [new Date(1982,4,1), new Date(1982,11,31)];
-var timeDomain5 = [new Date(1983,1,1), new Date(1995,11,31)];
+var timeDomain2 = [new Date(1969,11,31), new Date(1978,4,31)];
+var timeDomain3 = [new Date(1978,4,31), new Date(1982,2,31)];
+var timeDomain4 = [new Date(1982,2,31), new Date(1982,11,31)];
+var timeDomain5 = [new Date(1983,11,31), new Date(1995,11,31)];
 var overallTimeDomain = [new Date(1965,0,1), new Date(1995,11,31)];
 
 
